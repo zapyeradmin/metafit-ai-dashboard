@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -25,11 +26,11 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					DEFAULT: 'hsl(var(--primary))',
+					DEFAULT: '#4F46E5',
 					foreground: 'hsl(var(--primary-foreground))'
 				},
 				secondary: {
-					DEFAULT: 'hsl(var(--secondary))',
+					DEFAULT: '#10B981',
 					foreground: 'hsl(var(--secondary-foreground))'
 				},
 				destructive: {
@@ -63,10 +64,15 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
+			fontFamily: {
+				'pacifico': ['Pacifico', 'cursive'],
+				'inter': ['Inter', 'sans-serif'],
+			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				sm: 'calc(var(--radius) - 4px)',
+				'button': '8px'
 			},
 			keyframes: {
 				'accordion-down': {
