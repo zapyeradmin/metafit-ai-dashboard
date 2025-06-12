@@ -1,29 +1,158 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useWorkouts } from '@/hooks/useWorkouts';
+import { useNutrition } from '@/hooks/useNutrition';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 const PlanoDoDia = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [workoutExercises, setWorkoutExercises] = useState<any[]>([]);
+  const { workouts, getTodayWorkout, completeWorkout, completeExercise } = useWorkouts();
+  const { meals, getTodayMeals, completeMeal } = useNutrition();
+  const { toast } = useToast();
 
-  const todayWorkout = {
-    name: "Treino de Costas",
-    exercises: [
-      { name: "Puxada Frontal", sets: 4, reps: "12-15", weight: "45kg", completed: true },
-      { name: "Remada Curvada", sets: 4, reps: "10-12", weight: "60kg", completed: true },
-      { name: "Levantamento Terra", sets: 3, reps: "8-10", weight: "80kg", completed: false },
-      { name: "Pulley", sets: 3, reps: "12-15", weight: "35kg", completed: false }
-    ],
-    duration: "60-75 min",
-    time: "18:30"
+  const todayWorkout = getTodayWorkout();
+  const todayMeals = getTodayMeals();
+
+  useEffect(() => {
+    if (todayWorkout) {
+      fetchWorkoutExercises();
+    } else {
+      createDefaultWorkout();
+    }
+  }, [todayWorkout]);
+
+  useEffect(() => {
+    if (todayMeals.length === 0) {
+      createDefaultMeals();
+    }
+  }, [todayMeals]);
+
+  const fetchWorkoutExercises = async () => {
+    if (!todayWorkout) return;
+
+    const { data, error } = await supabase
+      .from('workout_exercises')
+      .select(`
+        *,
+        exercise:exercises(name, muscle_group, equipment)
+      `)
+      .eq('daily_workout_id', todayWorkout.id)
+      .order('order_index');
+
+    if (error) {
+      console.error('Error fetching exercises:', error);
+      return;
+    }
+
+    setWorkoutExercises(data || []);
   };
 
-  const todayMeals = [
-    { name: "Café da manhã", time: "07:00", calories: 450, completed: true },
-    { name: "Lanche da manhã", time: "09:30", calories: 200, completed: true },
-    { name: "Almoço", time: "12:30", calories: 650, completed: true },
-    { name: "Lanche da tarde", time: "15:30", calories: 300, completed: false },
-    { name: "Jantar", time: "19:00", calories: 550, completed: false },
-    { name: "Ceia", time: "21:30", calories: 200, completed: false }
-  ];
+  const createDefaultWorkout = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Criar treino do dia
+      const { data: workout, error: workoutError } = await supabase
+        .from('daily_workouts')
+        .insert({
+          user_id: user.id,
+          date: selectedDate,
+          name: "Treino de Costas",
+          muscle_groups: ['costas', 'biceps'],
+          is_completed: false
+        })
+        .select()
+        .single();
+
+      if (workoutError) return;
+
+      // Buscar exercícios de costas
+      const { data: exercises } = await supabase
+        .from('exercises')
+        .select('*')
+        .in('muscle_group', ['Costas', 'Bíceps'])
+        .limit(4);
+
+      if (exercises && exercises.length > 0) {
+        const workoutExerciseData = exercises.map((exercise, index) => ({
+          daily_workout_id: workout.id,
+          exercise_id: exercise.id,
+          sets: 4,
+          reps: index === 2 ? 8 : 12, // Levantamento terra menos reps
+          weight: index === 2 ? 80 : index === 1 ? 60 : 45,
+          rest_seconds: 90,
+          order_index: index,
+          is_completed: index < 2 // Primeiros dois já completados
+        }));
+
+        await supabase
+          .from('workout_exercises')
+          .insert(workoutExerciseData);
+      }
+
+      window.location.reload();
+    } catch (error) {
+      console.error('Error creating workout:', error);
+    }
+  };
+
+  const createDefaultMeals = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const defaultMeals = [
+        { meal_type: 'cafe_manha', name: 'Café da manhã', calories: 450, protein: 25, carbs: 45, fat: 15 },
+        { meal_type: 'lanche_manha', name: 'Lanche da manhã', calories: 200, protein: 15, carbs: 20, fat: 8 },
+        { meal_type: 'almoco', name: 'Almoço', calories: 650, protein: 40, carbs: 60, fat: 20 },
+        { meal_type: 'lanche_tarde', name: 'Lanche da tarde', calories: 300, protein: 20, carbs: 25, fat: 12 },
+        { meal_type: 'jantar', name: 'Jantar', calories: 550, protein: 35, carbs: 45, fat: 18 },
+        { meal_type: 'ceia', name: 'Ceia', calories: 200, protein: 15, carbs: 15, fat: 10 }
+      ];
+
+      const mealsData = defaultMeals.map((meal, index) => ({
+        user_id: user.id,
+        date: selectedDate,
+        ...meal,
+        is_completed: index < 3 // Primeiras 3 refeições já completadas
+      }));
+
+      await supabase
+        .from('daily_meals')
+        .insert(mealsData);
+
+      window.location.reload();
+    } catch (error) {
+      console.error('Error creating meals:', error);
+    }
+  };
+
+  const handleCompleteExercise = async (exerciseId: string) => {
+    await completeExercise(exerciseId);
+    fetchWorkoutExercises();
+  };
+
+  const handleCompleteMeal = async (mealId: string) => {
+    await completeMeal(mealId);
+  };
+
+  const handleStartWorkout = () => {
+    if (!todayWorkout) return;
+    
+    toast({
+      title: "Treino Iniciado!",
+      description: "Bom treino! Lembre-se de marcar os exercícios conforme completa."
+    });
+  };
+
+  const totalCalories = todayMeals.reduce((sum, meal) => sum + (meal.calories || 0), 0);
+  const targetCalories = 2800;
+  const caloriesProgress = (totalCalories / targetCalories) * 100;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -39,11 +168,11 @@ const PlanoDoDia = () => {
           <div className="flex items-center space-x-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
-              <input
+              <Input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-auto"
               />
             </div>
             <div className="flex items-center mt-6 px-3 py-1 bg-white rounded-lg shadow-sm">
@@ -60,33 +189,39 @@ const PlanoDoDia = () => {
               <h3 className="text-lg font-semibold text-gray-900">Treino de Hoje</h3>
               <div className="flex items-center text-sm text-gray-600">
                 <i className="ri-time-line w-4 h-4 mr-1"></i>
-                <span>{todayWorkout.time}</span>
+                <span>18:30</span>
               </div>
             </div>
 
-            <div className="mb-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-md font-medium text-gray-900">{todayWorkout.name}</h4>
-                <span className="text-sm text-gray-500">{todayWorkout.duration}</span>
+            {todayWorkout && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-md font-medium text-gray-900">{todayWorkout.name}</h4>
+                  <span className="text-sm text-gray-500">60-75 min</span>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-3">
-              {todayWorkout.exercises.map((exercise, index) => (
-                <div key={index} className="flex items-center p-3 bg-gray-50 rounded-lg">
+              {workoutExercises.map((exercise) => (
+                <div key={exercise.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
-                    <label className="custom-checkbox flex items-center">
-                      <input type="checkbox" checked={exercise.completed} readOnly />
-                      <span className="checkmark"></span>
-                    </label>
+                    <input 
+                      type="checkbox" 
+                      checked={exercise.is_completed}
+                      onChange={() => handleCompleteExercise(exercise.id)}
+                      className="h-4 w-4 text-primary"
+                    />
                   </div>
                   <div className="ml-4 flex-1">
-                    <h5 className="text-sm font-medium text-gray-900">{exercise.name}</h5>
+                    <h5 className="text-sm font-medium text-gray-900">
+                      {exercise.exercise?.name || 'Exercício'}
+                    </h5>
                     <p className="text-xs text-gray-600">
-                      {exercise.sets} séries × {exercise.reps} reps • {exercise.weight}
+                      {exercise.sets} séries × {exercise.reps} reps • {exercise.weight}kg
                     </p>
                   </div>
-                  {exercise.completed && (
+                  {exercise.is_completed && (
                     <div className="text-green-500">
                       <i className="ri-check-line w-5 h-5"></i>
                     </div>
@@ -96,12 +231,15 @@ const PlanoDoDia = () => {
             </div>
 
             <div className="mt-6 flex space-x-3">
-              <button className="flex-1 px-4 py-2 text-sm text-white bg-primary rounded-button hover:bg-primary/90">
+              <Button 
+                onClick={handleStartWorkout}
+                className="flex-1"
+              >
                 Iniciar Treino
-              </button>
-              <button className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-button hover:bg-gray-200">
+              </Button>
+              <Button variant="outline" size="sm">
                 <i className="ri-edit-line w-4 h-4"></i>
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -110,34 +248,47 @@ const PlanoDoDia = () => {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900">Alimentação de Hoje</h3>
               <div className="text-sm text-gray-600">
-                <span>2.350 / 2.800 kcal</span>
+                <span>{totalCalories} / {targetCalories} kcal</span>
               </div>
             </div>
 
             <div className="mb-4">
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-primary h-2 rounded-full" style={{ width: '84%' }}></div>
+                <div 
+                  className="bg-primary h-2 rounded-full transition-all duration-300" 
+                  style={{ width: `${Math.min(caloriesProgress, 100)}%` }}
+                ></div>
               </div>
-              <p className="text-xs text-gray-600 mt-1">84% da meta diária</p>
+              <p className="text-xs text-gray-600 mt-1">
+                {Math.round(caloriesProgress)}% da meta diária
+              </p>
             </div>
 
             <div className="space-y-3">
-              {todayMeals.map((meal, index) => (
-                <div key={index} className="flex items-center p-3 bg-gray-50 rounded-lg">
+              {todayMeals.map((meal) => (
+                <div key={meal.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
-                    <label className="custom-checkbox flex items-center">
-                      <input type="checkbox" checked={meal.completed} readOnly />
-                      <span className="checkmark"></span>
-                    </label>
+                    <input 
+                      type="checkbox" 
+                      checked={meal.is_completed}
+                      onChange={() => handleCompleteMeal(meal.id)}
+                      className="h-4 w-4 text-primary"
+                    />
                   </div>
                   <div className="ml-4 flex-1">
                     <div className="flex justify-between items-center">
                       <h5 className="text-sm font-medium text-gray-900">{meal.name}</h5>
-                      <span className="text-xs text-gray-500">{meal.time}</span>
+                      <span className="text-xs text-gray-500">
+                        {meal.meal_type === 'cafe_manha' ? '07:00' :
+                         meal.meal_type === 'lanche_manha' ? '09:30' :
+                         meal.meal_type === 'almoco' ? '12:30' :
+                         meal.meal_type === 'lanche_tarde' ? '15:30' :
+                         meal.meal_type === 'jantar' ? '19:00' : '21:30'}
+                      </span>
                     </div>
                     <p className="text-xs text-gray-600">{meal.calories} kcal</p>
                   </div>
-                  {meal.completed && (
+                  {meal.is_completed && (
                     <div className="text-green-500">
                       <i className="ri-check-line w-5 h-5"></i>
                     </div>
@@ -147,12 +298,12 @@ const PlanoDoDia = () => {
             </div>
 
             <div className="mt-6 flex space-x-3">
-              <button className="flex-1 px-4 py-2 text-sm text-white bg-primary rounded-button hover:bg-primary/90">
+              <Button className="flex-1">
                 Ver Detalhes
-              </button>
-              <button className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-button hover:bg-gray-200">
+              </Button>
+              <Button variant="outline" size="sm">
                 <i className="ri-add-line w-4 h-4"></i>
-              </button>
+              </Button>
             </div>
           </div>
         </div>

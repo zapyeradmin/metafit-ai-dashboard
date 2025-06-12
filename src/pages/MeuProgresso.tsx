@@ -1,34 +1,94 @@
 
 import React, { useState } from 'react';
 import { WeeklyChart } from '../components/WeeklyChart';
+import { useBodyMeasurements } from '@/hooks/useBodyMeasurements';
+import { useWorkouts } from '@/hooks/useWorkouts';
 
 const MeuProgresso = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('mes');
+  const { measurements, getLatestMeasurement } = useBodyMeasurements();
+  const { workouts } = useWorkouts();
 
-  const progressData = {
-    weight: [
-      { date: '01/12', value: 78.2 },
-      { date: '08/12', value: 78.5 },
-      { date: '15/12', value: 78.8 },
-      { date: '22/12', value: 79.1 },
-      { date: '29/12', value: 79.3 },
-    ],
-    bodyFat: [
-      { date: '01/12', value: 15.2 },
-      { date: '08/12', value: 14.8 },
-      { date: '15/12', value: 14.5 },
-      { date: '22/12', value: 14.2 },
-      { date: '29/12', value: 14.0 },
-    ]
+  const latest = getLatestMeasurement();
+  
+  // Calcular estatísticas de treino
+  const thisWeekWorkouts = workouts.filter(w => {
+    const workoutDate = new Date(w.date);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return workoutDate >= weekAgo;
+  });
+
+  const thisMonthWorkouts = workouts.filter(w => {
+    const workoutDate = new Date(w.date);
+    const monthAgo = new Date();
+    monthAgo.setMonth(monthAgo.getMonth() - 1);
+    return workoutDate >= monthAgo;
+  });
+
+  const completedThisWeek = thisWeekWorkouts.filter(w => w.is_completed).length;
+  const completedThisMonth = thisMonthWorkouts.filter(w => w.is_completed).length;
+
+  // Calcular sequência
+  const calculateStreak = () => {
+    const sortedWorkouts = [...workouts]
+      .filter(w => w.is_completed)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    let streak = 0;
+    const today = new Date();
+    
+    for (let i = 0; i < sortedWorkouts.length; i++) {
+      const workoutDate = new Date(sortedWorkouts[i].date);
+      const daysDiff = Math.floor((today.getTime() - workoutDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff === streak) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
   };
 
-  const measurements = [
-    { name: 'Peso', current: '79.3kg', goal: '82kg', progress: 65 },
-    { name: '% Gordura', current: '14.0%', goal: '12%', progress: 75 },
-    { name: 'Massa Magra', current: '68.2kg', goal: '72kg', progress: 55 },
-    { name: 'Peito', current: '102cm', goal: '108cm', progress: 60 },
-    { name: 'Braços', current: '38cm', goal: '42cm', progress: 70 },
-    { name: 'Cintura', current: '82cm', goal: '80cm', progress: 50 }
+  const measurementData = [
+    { 
+      name: 'Peso', 
+      current: `${latest?.weight || 79.3}kg`, 
+      goal: '82kg', 
+      progress: latest?.weight ? Math.min((latest.weight / 82) * 100, 100) : 65 
+    },
+    { 
+      name: '% Gordura', 
+      current: `${latest?.body_fat_percentage || 14.0}%`, 
+      goal: '12%', 
+      progress: latest?.body_fat_percentage ? Math.max(100 - ((latest.body_fat_percentage - 12) / 12) * 100, 0) : 75 
+    },
+    { 
+      name: 'Massa Magra', 
+      current: `${latest?.muscle_mass || 68.2}kg`, 
+      goal: '72kg', 
+      progress: latest?.muscle_mass ? Math.min((latest.muscle_mass / 72) * 100, 100) : 55 
+    },
+    { 
+      name: 'Peito', 
+      current: `${latest?.chest || 102}cm`, 
+      goal: '108cm', 
+      progress: latest?.chest ? Math.min((latest.chest / 108) * 100, 100) : 60 
+    },
+    { 
+      name: 'Braços', 
+      current: `${latest?.arms || 38}cm`, 
+      goal: '42cm', 
+      progress: latest?.arms ? Math.min((latest.arms / 42) * 100, 100) : 70 
+    },
+    { 
+      name: 'Cintura', 
+      current: `${latest?.waist || 82}cm`, 
+      goal: '80cm', 
+      progress: latest?.waist ? Math.max(100 - ((latest.waist - 80) / 80) * 100, 0) : 50 
+    }
   ];
 
   return (
@@ -69,7 +129,7 @@ const MeuProgresso = () => {
               </div>
             </div>
             <div className="mt-4">
-              <p className="text-2xl font-bold text-gray-900">79.3kg</p>
+              <p className="text-2xl font-bold text-gray-900">{latest?.weight || 79.3}kg</p>
               <p className="text-sm text-green-600">+1.1kg este mês</p>
             </div>
           </div>
@@ -82,7 +142,7 @@ const MeuProgresso = () => {
               </div>
             </div>
             <div className="mt-4">
-              <p className="text-2xl font-bold text-gray-900">14.0%</p>
+              <p className="text-2xl font-bold text-gray-900">{latest?.body_fat_percentage || 14.0}%</p>
               <p className="text-sm text-green-600">-1.2% este mês</p>
             </div>
           </div>
@@ -95,7 +155,7 @@ const MeuProgresso = () => {
               </div>
             </div>
             <div className="mt-4">
-              <p className="text-2xl font-bold text-gray-900">68.2kg</p>
+              <p className="text-2xl font-bold text-gray-900">{latest?.muscle_mass || 68.2}kg</p>
               <p className="text-sm text-green-600">+2.1kg este mês</p>
             </div>
           </div>
@@ -134,7 +194,7 @@ const MeuProgresso = () => {
               <button className="text-sm text-primary hover:text-primary/80">Atualizar</button>
             </div>
             <div className="space-y-4">
-              {measurements.map((measurement, index) => (
+              {measurementData.map((measurement, index) => (
                 <div key={index}>
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-sm font-medium text-gray-900">{measurement.name}</span>
@@ -165,25 +225,35 @@ const MeuProgresso = () => {
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-sm font-medium text-gray-900">Esta Semana</h4>
-                <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">100%</span>
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  completedThisWeek >= 5 ? 'text-green-600 bg-green-100' : 'text-yellow-600 bg-yellow-100'
+                }`}>
+                  {completedThisWeek >= 5 ? '100%' : Math.round((completedThisWeek / 5) * 100) + '%'}
+                </span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">5/5</p>
+              <p className="text-2xl font-bold text-gray-900">{completedThisWeek}/5</p>
               <p className="text-xs text-gray-600">treinos completados</p>
             </div>
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-sm font-medium text-gray-900">Este Mês</h4>
-                <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">85%</span>
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  completedThisMonth >= 17 ? 'text-green-600 bg-green-100' : 'text-blue-600 bg-blue-100'
+                }`}>
+                  {Math.round((completedThisMonth / 20) * 100)}%
+                </span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">17/20</p>
+              <p className="text-2xl font-bold text-gray-900">{completedThisMonth}/20</p>
               <p className="text-xs text-gray-600">treinos completados</p>
             </div>
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-sm font-medium text-gray-900">Sequência</h4>
-                <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full">Ativo</span>
+                <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full">
+                  {calculateStreak() > 0 ? 'Ativo' : 'Inativo'}
+                </span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">12</p>
+              <p className="text-2xl font-bold text-gray-900">{calculateStreak()}</p>
               <p className="text-xs text-gray-600">dias consecutivos</p>
             </div>
           </div>
