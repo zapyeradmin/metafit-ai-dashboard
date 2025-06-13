@@ -1,21 +1,72 @@
+
 import React from 'react';
 import { ProgressChart } from '../components/ProgressChart';
 import { WeeklyChart } from '../components/WeeklyChart';
+import { useProfile } from '../hooks/useProfile';
+import { useBodyMeasurements } from '../hooks/useBodyMeasurements';
+import { useWorkouts } from '../hooks/useWorkouts';
+import { useNutrition } from '../hooks/useNutrition';
+import LoadingSpinner from '../components/plano-do-dia/LoadingSpinner';
 
 const Index = () => {
+  const { profile, loading: profileLoading } = useProfile();
+  const { getLatestMeasurement, loading: measurementsLoading } = useBodyMeasurements();
+  const { getTodayWorkout, workouts, loading: workoutsLoading } = useWorkouts();
+  const { getTodayMeals, loading: nutritionLoading } = useNutrition();
+
+  const latestMeasurement = getLatestMeasurement();
+  const todayWorkout = getTodayWorkout();
+  const todayMeals = getTodayMeals();
+
+  const isLoading = profileLoading || measurementsLoading || workoutsLoading || nutritionLoading;
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  // Calculate progress percentage based on current vs goal weight
+  const calculateProgress = () => {
+    if (!profile?.goal_weight || !latestMeasurement?.weight || !profile?.current_weight) return 0;
+    const totalToLose = Math.abs(profile.current_weight - profile.goal_weight);
+    const currentProgress = Math.abs(profile.current_weight - latestMeasurement.weight);
+    return Math.min(Math.round((currentProgress / totalToLose) * 100), 100);
+  };
+
+  const progressPercentage = calculateProgress();
+
+  // Calculate completed meals percentage
+  const completedMealsCount = todayMeals.filter(meal => meal.is_completed).length;
+  const totalMealsCount = todayMeals.length;
+  const mealsProgress = totalMealsCount > 0 ? Math.round((completedMealsCount / totalMealsCount) * 100) : 0;
+
+  // Get next workout from upcoming workouts
+  const getNextWorkout = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return workouts.find(w => w.date >= today && !w.is_completed) || todayWorkout;
+  };
+
+  const nextWorkout = getNextWorkout();
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Dashboard Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-600">Olá Rafael, bem-vindo ao seu painel de controle fitness.</p>
+          <p className="mt-1 text-sm text-gray-600">
+            Olá {profile?.full_name || 'Usuário'}, bem-vindo ao seu painel de controle fitness.
+          </p>
         </div>
         
         {/* Date and Weather */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
           <div className="text-sm text-gray-600">
-            <span>Quinta-feira, 12 de Junho de 2025</span>
+            <span>{new Date().toLocaleDateString('pt-BR', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</span>
           </div>
           <div className="flex items-center mt-2 sm:mt-0 px-3 py-1 bg-white rounded-lg shadow-sm">
             <div className="w-5 h-5 flex items-center justify-center mr-2">
@@ -40,7 +91,7 @@ const Index = () => {
               </div>
             </div>
             <div className="mt-4 text-center">
-              <p className="text-2xl font-bold text-gray-900">68%</p>
+              <p className="text-2xl font-bold text-gray-900">{progressPercentage}%</p>
               <p className="text-sm text-gray-600">do objetivo alcançado</p>
             </div>
           </div>
@@ -53,19 +104,27 @@ const Index = () => {
               </div>
             </div>
             <div className="mt-4">
-              <h4 className="text-lg font-semibold text-gray-900">Treino de Costas</h4>
-              <div className="mt-2 flex items-center text-sm text-gray-600">
-                <div className="w-4 h-4 flex items-center justify-center mr-1">
-                  <i className="ri-time-line"></i>
+              {nextWorkout ? (
+                <>
+                  <h4 className="text-lg font-semibold text-gray-900">{nextWorkout.name}</h4>
+                  <div className="mt-2 flex items-center text-sm text-gray-600">
+                    <div className="w-4 h-4 flex items-center justify-center mr-1">
+                      <i className="ri-time-line"></i>
+                    </div>
+                    <span>{new Date(nextWorkout.date).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                  <div className="mt-1 flex items-center text-sm text-gray-600">
+                    <div className="w-4 h-4 flex items-center justify-center mr-1">
+                      <i className="ri-map-pin-line"></i>
+                    </div>
+                    <span>{profile?.gym_name || 'Academia'}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center text-gray-500">
+                  <p>Nenhum treino agendado</p>
                 </div>
-                <span>Hoje, 18:30</span>
-              </div>
-              <div className="mt-1 flex items-center text-sm text-gray-600">
-                <div className="w-4 h-4 flex items-center justify-center mr-1">
-                  <i className="ri-map-pin-line"></i>
-                </div>
-                <span>Academia Central</span>
-              </div>
+              )}
             </div>
             <button className="mt-4 w-full flex items-center justify-center px-4 py-2 text-sm text-white bg-primary rounded-button hover:bg-primary/90 whitespace-nowrap">
               Ver Detalhes
@@ -80,36 +139,23 @@ const Index = () => {
               </div>
             </div>
             <div className="mt-4">
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <label className="custom-checkbox flex items-center">
-                    <input type="checkbox" checked readOnly />
-                    <span className="checkmark"></span>
-                    <span className="ml-7 text-sm text-gray-600">Café da manhã</span>
-                  </label>
+              {todayMeals.length > 0 ? (
+                <div className="space-y-3">
+                  {todayMeals.slice(0, 4).map((meal) => (
+                    <div key={meal.id} className="flex items-center">
+                      <label className="custom-checkbox flex items-center">
+                        <input type="checkbox" checked={meal.is_completed} readOnly />
+                        <span className="checkmark"></span>
+                        <span className="ml-7 text-sm text-gray-600">{meal.name}</span>
+                      </label>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center">
-                  <label className="custom-checkbox flex items-center">
-                    <input type="checkbox" checked readOnly />
-                    <span className="checkmark"></span>
-                    <span className="ml-7 text-sm text-gray-600">Lanche da manhã</span>
-                  </label>
+              ) : (
+                <div className="text-center text-gray-500">
+                  <p>Nenhuma refeição planejada para hoje</p>
                 </div>
-                <div className="flex items-center">
-                  <label className="custom-checkbox flex items-center">
-                    <input type="checkbox" readOnly />
-                    <span className="checkmark"></span>
-                    <span className="ml-7 text-sm text-gray-600">Almoço</span>
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <label className="custom-checkbox flex items-center">
-                    <input type="checkbox" readOnly />
-                    <span className="checkmark"></span>
-                    <span className="ml-7 text-sm text-gray-600">Lanche da tarde</span>
-                  </label>
-                </div>
-              </div>
+              )}
             </div>
             <button className="mt-4 w-full flex items-center justify-center px-4 py-2 text-sm text-white bg-primary rounded-button hover:bg-primary/90 whitespace-nowrap">
               Ver Plano Completo
@@ -124,33 +170,45 @@ const Index = () => {
               </div>
             </div>
             <div className="mt-4 space-y-3">
-              <div>
-                <div className="flex justify-between items-center">
-                  <p className="text-sm text-gray-600">Peso Atual</p>
-                  <p className="text-sm font-medium text-gray-900">78.5 kg</p>
+              {latestMeasurement ? (
+                <>
+                  <div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-gray-600">Peso Atual</p>
+                      <p className="text-sm font-medium text-gray-900">{latestMeasurement.weight} kg</p>
+                    </div>
+                    <div className="mt-1 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${progressPercentage}%` }}></div>
+                    </div>
+                  </div>
+                  {latestMeasurement.body_fat_percentage && (
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm text-gray-600">% Gordura</p>
+                        <p className="text-sm font-medium text-gray-900">{latestMeasurement.body_fat_percentage}%</p>
+                      </div>
+                      <div className="mt-1 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-primary rounded-full" style={{ width: '60%' }}></div>
+                      </div>
+                    </div>
+                  )}
+                  {latestMeasurement.muscle_mass && (
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm text-gray-600">Massa Magra</p>
+                        <p className="text-sm font-medium text-gray-900">{latestMeasurement.muscle_mass} kg</p>
+                      </div>
+                      <div className="mt-1 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-primary rounded-full" style={{ width: '85%' }}></div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center text-gray-500">
+                  <p>Nenhuma medida registrada</p>
                 </div>
-                <div className="mt-1 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full" style={{ width: '75%' }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between items-center">
-                  <p className="text-sm text-gray-600">% Gordura</p>
-                  <p className="text-sm font-medium text-gray-900">14.2%</p>
-                </div>
-                <div className="mt-1 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full" style={{ width: '60%' }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between items-center">
-                  <p className="text-sm text-gray-600">Massa Magra</p>
-                  <p className="text-sm font-medium text-gray-900">67.3 kg</p>
-                </div>
-                <div className="mt-1 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full" style={{ width: '85%' }}></div>
-                </div>
-              </div>
+              )}
             </div>
             <button className="mt-4 w-full flex items-center justify-center px-4 py-2 text-sm text-white bg-primary rounded-button hover:bg-primary/90 whitespace-nowrap">
               Atualizar Medidas
@@ -224,42 +282,24 @@ const Index = () => {
               <button className="text-sm text-primary hover:text-primary/80">Ver todos</button>
             </div>
             <div className="space-y-4">
-              <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-primary bg-opacity-10 flex-shrink-0">
-                  <i className="ri-run-line text-primary"></i>
-                </div>
-                <div className="ml-4 flex-1">
-                  <div className="flex justify-between">
-                    <p className="text-sm font-medium text-gray-900">Treino de Costas</p>
-                    <p className="text-xs text-gray-600">Hoje</p>
+              {workouts.slice(0, 3).map((workout, index) => (
+                <div key={workout.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                  <div className="w-10 h-10 flex items-center justify-center rounded-full bg-primary bg-opacity-10 flex-shrink-0">
+                    <i className={`ri-${index === 0 ? 'run' : index === 1 ? 'heart-pulse' : 'boxing'}-line text-primary`}></i>
                   </div>
-                  <p className="text-xs text-gray-600">18:30 - Academia Central</p>
-                </div>
-              </div>
-              <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-primary bg-opacity-10 flex-shrink-0">
-                  <i className="ri-heart-pulse-line text-primary"></i>
-                </div>
-                <div className="ml-4 flex-1">
-                  <div className="flex justify-between">
-                    <p className="text-sm font-medium text-gray-900">Treino de Pernas</p>
-                    <p className="text-xs text-gray-600">Amanhã</p>
+                  <div className="ml-4 flex-1">
+                    <div className="flex justify-between">
+                      <p className="text-sm font-medium text-gray-900">{workout.name}</p>
+                      <p className="text-xs text-gray-600">
+                        {new Date(workout.date).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-600">
+                      {workout.duration_minutes ? `${workout.duration_minutes} min` : ''} - {profile?.gym_name || 'Academia'}
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-600">19:00 - Academia Central</p>
                 </div>
-              </div>
-              <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-primary bg-opacity-10 flex-shrink-0">
-                  <i className="ri-boxing-line text-primary"></i>
-                </div>
-                <div className="ml-4 flex-1">
-                  <div className="flex justify-between">
-                    <p className="text-sm font-medium text-gray-900">Treino de Peito</p>
-                    <p className="text-xs text-gray-600">Sexta-feira</p>
-                  </div>
-                  <p className="text-xs text-gray-600">18:30 - Academia Central</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
           
