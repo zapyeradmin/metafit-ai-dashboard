@@ -3,9 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useNutrition } from '@/hooks/useNutrition';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import DateSelector from '@/components/plano-do-dia/DateSelector';
+import WorkoutSection from '@/components/plano-do-dia/WorkoutSection';
+import NutritionSection from '@/components/plano-do-dia/NutritionSection';
+import DailySummary from '@/components/plano-do-dia/DailySummary';
+import LoadingSpinner from '@/components/plano-do-dia/LoadingSpinner';
 
 const PlanoDoDia = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -76,7 +79,6 @@ const PlanoDoDia = () => {
 
       setLoading(true);
 
-      // Criar treino do dia
       const { data: workout, error: workoutError } = await supabase
         .from('daily_workouts')
         .insert({
@@ -94,7 +96,6 @@ const PlanoDoDia = () => {
         return;
       }
 
-      // Buscar exercícios de costas
       const { data: exercises } = await supabase
         .from('exercises')
         .select('*')
@@ -118,7 +119,6 @@ const PlanoDoDia = () => {
           .insert(workoutExerciseData);
       }
 
-      // Recarregar dados ao invés de reload da página
       await refetchWorkouts();
       toast({
         title: "Sucesso",
@@ -173,7 +173,6 @@ const PlanoDoDia = () => {
         return;
       }
 
-      // Recarregar dados ao invés de reload da página
       await refetchMeals();
       toast({
         title: "Sucesso",
@@ -194,7 +193,7 @@ const PlanoDoDia = () => {
   const handleCompleteExercise = async (exerciseId: string) => {
     try {
       await completeExercise(exerciseId);
-      await fetchWorkoutExercises(); // Recarregar exercícios
+      await fetchWorkoutExercises();
     } catch (error) {
       console.error('Error completing exercise:', error);
     }
@@ -208,225 +207,37 @@ const PlanoDoDia = () => {
     }
   };
 
-  const handleStartWorkout = () => {
-    if (!todayWorkout) return;
-    
-    toast({
-      title: "Treino Iniciado!",
-      description: "Bom treino! Lembre-se de marcar os exercícios conforme completa."
-    });
-  };
-
-  const totalCalories = todayMeals.reduce((sum, meal) => sum + (meal.calories || 0), 0);
-  const targetCalories = 2800;
-  const caloriesProgress = (totalCalories / targetCalories) * 100;
-
   if (loading) {
-    return (
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-gray-600">Carregando...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Plano do Dia</h1>
           <p className="mt-1 text-sm text-gray-600">Organize seu treino e alimentação de hoje.</p>
         </div>
 
-        {/* Date Selector */}
-        <div className="mb-6">
-          <div className="flex items-center space-x-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-auto"
-              />
-            </div>
-            <div className="flex items-center mt-6 px-3 py-1 bg-white rounded-lg shadow-sm">
-              <i className="ri-sun-line text-yellow-500 w-5 h-5 mr-2"></i>
-              <span className="text-sm text-gray-600">28°C - São Paulo</span>
-            </div>
-          </div>
-        </div>
+        <DateSelector 
+          selectedDate={selectedDate}
+          onDateChange={setSelectedDate}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Treino do Dia */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Treino de Hoje</h3>
-              <div className="flex items-center text-sm text-gray-600">
-                <i className="ri-time-line w-4 h-4 mr-1"></i>
-                <span>18:30</span>
-              </div>
-            </div>
+          <WorkoutSection 
+            todayWorkout={todayWorkout}
+            workoutExercises={workoutExercises}
+            onCompleteExercise={handleCompleteExercise}
+          />
 
-            {todayWorkout && (
-              <div className="mb-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-md font-medium text-gray-900">{todayWorkout.name}</h4>
-                  <span className="text-sm text-gray-500">60-75 min</span>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {workoutExercises.map((exercise) => (
-                <div key={exercise.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <input 
-                      type="checkbox" 
-                      checked={exercise.is_completed}
-                      onChange={() => handleCompleteExercise(exercise.id)}
-                      className="h-4 w-4 text-primary"
-                    />
-                  </div>
-                  <div className="ml-4 flex-1">
-                    <h5 className="text-sm font-medium text-gray-900">
-                      {exercise.exercise?.name || 'Exercício'}
-                    </h5>
-                    <p className="text-xs text-gray-600">
-                      {exercise.sets} séries × {exercise.reps} reps • {exercise.weight}kg
-                    </p>
-                  </div>
-                  {exercise.is_completed && (
-                    <div className="text-green-500">
-                      <i className="ri-check-line w-5 h-5"></i>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex space-x-3">
-              <Button 
-                onClick={handleStartWorkout}
-                className="flex-1"
-                disabled={!todayWorkout}
-              >
-                Iniciar Treino
-              </Button>
-              <Button variant="outline" size="sm">
-                <i className="ri-edit-line w-4 h-4"></i>
-              </Button>
-            </div>
-          </div>
-
-          {/* Plano Alimentar do Dia */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Alimentação de Hoje</h3>
-              <div className="text-sm text-gray-600">
-                <span>{totalCalories} / {targetCalories} kcal</span>
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-primary h-2 rounded-full transition-all duration-300" 
-                  style={{ width: `${Math.min(caloriesProgress, 100)}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-gray-600 mt-1">
-                {Math.round(caloriesProgress)}% da meta diária
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {todayMeals.map((meal) => (
-                <div key={meal.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <input 
-                      type="checkbox" 
-                      checked={meal.is_completed}
-                      onChange={() => handleCompleteMeal(meal.id)}
-                      className="h-4 w-4 text-primary"
-                    />
-                  </div>
-                  <div className="ml-4 flex-1">
-                    <div className="flex justify-between items-center">
-                      <h5 className="text-sm font-medium text-gray-900">{meal.name}</h5>
-                      <span className="text-xs text-gray-500">
-                        {meal.meal_type === 'cafe_manha' ? '07:00' :
-                         meal.meal_type === 'lanche_manha' ? '09:30' :
-                         meal.meal_type === 'almoco' ? '12:30' :
-                         meal.meal_type === 'lanche_tarde' ? '15:30' :
-                         meal.meal_type === 'jantar' ? '19:00' : '21:30'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600">{meal.calories} kcal</p>
-                  </div>
-                  {meal.is_completed && (
-                    <div className="text-green-500">
-                      <i className="ri-check-line w-5 h-5"></i>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex space-x-3">
-              <Button className="flex-1">
-                Ver Detalhes
-              </Button>
-              <Button variant="outline" size="sm">
-                <i className="ri-add-line w-4 h-4"></i>
-              </Button>
-            </div>
-          </div>
+          <NutritionSection 
+            todayMeals={todayMeals}
+            onCompleteMeal={handleCompleteMeal}
+          />
         </div>
 
-        {/* Resumo do Dia */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center">
-              <div className="w-8 h-8 flex items-center justify-center rounded-full bg-primary bg-opacity-10">
-                <i className="ri-fire-line text-primary"></i>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Calorias Queimadas</p>
-                <p className="text-2xl font-bold text-gray-900">420</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center">
-              <div className="w-8 h-8 flex items-center justify-center rounded-full bg-primary bg-opacity-10">
-                <i className="ri-time-line text-primary"></i>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Tempo de Treino</p>
-                <p className="text-2xl font-bold text-gray-900">45min</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center">
-              <div className="w-8 h-8 flex items-center justify-center rounded-full bg-primary bg-opacity-10">
-                <i className="ri-drop-line text-primary"></i>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Hidratação</p>
-                <p className="text-2xl font-bold text-gray-900">2.1L</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DailySummary />
       </div>
     </div>
   );
