@@ -10,8 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 const PlanoDoDia = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [workoutExercises, setWorkoutExercises] = useState<any[]>([]);
-  const { workouts, getTodayWorkout, completeWorkout, completeExercise } = useWorkouts();
-  const { meals, getTodayMeals, completeMeal } = useNutrition();
+  const [loading, setLoading] = useState(false);
+  const { workouts, getTodayWorkout, completeWorkout, completeExercise, refetch: refetchWorkouts } = useWorkouts();
+  const { meals, getTodayMeals, completeMeal, refetch: refetchMeals } = useNutrition();
   const { toast } = useToast();
 
   const todayWorkout = getTodayWorkout();
@@ -23,38 +24,57 @@ const PlanoDoDia = () => {
     } else {
       createDefaultWorkout();
     }
-  }, [todayWorkout]);
+  }, [todayWorkout?.id]);
 
   useEffect(() => {
     if (todayMeals.length === 0) {
       createDefaultMeals();
     }
-  }, [todayMeals]);
+  }, [todayMeals.length]);
 
   const fetchWorkoutExercises = async () => {
     if (!todayWorkout) return;
 
-    const { data, error } = await supabase
-      .from('workout_exercises')
-      .select(`
-        *,
-        exercise:exercises(name, muscle_group, equipment)
-      `)
-      .eq('daily_workout_id', todayWorkout.id)
-      .order('order_index');
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('workout_exercises')
+        .select(`
+          *,
+          exercise:exercises(name, muscle_group, equipment)
+        `)
+        .eq('daily_workout_id', todayWorkout.id)
+        .order('order_index');
 
-    if (error) {
-      console.error('Error fetching exercises:', error);
-      return;
+      if (error) {
+        console.error('Error fetching exercises:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar exercícios",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setWorkoutExercises(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao carregar exercícios",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-
-    setWorkoutExercises(data || []);
   };
 
   const createDefaultWorkout = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      setLoading(true);
 
       // Criar treino do dia
       const { data: workout, error: workoutError } = await supabase
@@ -69,7 +89,10 @@ const PlanoDoDia = () => {
         .select()
         .single();
 
-      if (workoutError) return;
+      if (workoutError) {
+        console.error('Error creating workout:', workoutError);
+        return;
+      }
 
       // Buscar exercícios de costas
       const { data: exercises } = await supabase
@@ -83,11 +106,11 @@ const PlanoDoDia = () => {
           daily_workout_id: workout.id,
           exercise_id: exercise.id,
           sets: 4,
-          reps: index === 2 ? 8 : 12, // Levantamento terra menos reps
+          reps: index === 2 ? 8 : 12,
           weight: index === 2 ? 80 : index === 1 ? 60 : 45,
           rest_seconds: 90,
           order_index: index,
-          is_completed: index < 2 // Primeiros dois já completados
+          is_completed: index < 2
         }));
 
         await supabase
@@ -95,9 +118,21 @@ const PlanoDoDia = () => {
           .insert(workoutExerciseData);
       }
 
-      window.location.reload();
+      // Recarregar dados ao invés de reload da página
+      await refetchWorkouts();
+      toast({
+        title: "Sucesso",
+        description: "Treino criado com sucesso!"
+      });
     } catch (error) {
       console.error('Error creating workout:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao criar treino",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -105,6 +140,8 @@ const PlanoDoDia = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      setLoading(true);
 
       const defaultMeals = [
         { meal_type: 'cafe_manha', name: 'Café da manhã', calories: 450, protein: 25, carbs: 45, fat: 15 },
@@ -119,26 +156,56 @@ const PlanoDoDia = () => {
         user_id: user.id,
         date: selectedDate,
         ...meal,
-        is_completed: index < 3 // Primeiras 3 refeições já completadas
+        is_completed: index < 3
       }));
 
-      await supabase
+      const { error } = await supabase
         .from('daily_meals')
         .insert(mealsData);
 
-      window.location.reload();
+      if (error) {
+        console.error('Error creating meals:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao criar refeições",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Recarregar dados ao invés de reload da página
+      await refetchMeals();
+      toast({
+        title: "Sucesso",
+        description: "Refeições criadas com sucesso!"
+      });
     } catch (error) {
       console.error('Error creating meals:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao criar refeições",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCompleteExercise = async (exerciseId: string) => {
-    await completeExercise(exerciseId);
-    fetchWorkoutExercises();
+    try {
+      await completeExercise(exerciseId);
+      await fetchWorkoutExercises(); // Recarregar exercícios
+    } catch (error) {
+      console.error('Error completing exercise:', error);
+    }
   };
 
   const handleCompleteMeal = async (mealId: string) => {
-    await completeMeal(mealId);
+    try {
+      await completeMeal(mealId);
+    } catch (error) {
+      console.error('Error completing meal:', error);
+    }
   };
 
   const handleStartWorkout = () => {
@@ -153,6 +220,19 @@ const PlanoDoDia = () => {
   const totalCalories = todayMeals.reduce((sum, meal) => sum + (meal.calories || 0), 0);
   const targetCalories = 2800;
   const caloriesProgress = (totalCalories / targetCalories) * 100;
+
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-gray-600">Carregando...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -234,6 +314,7 @@ const PlanoDoDia = () => {
               <Button 
                 onClick={handleStartWorkout}
                 className="flex-1"
+                disabled={!todayWorkout}
               >
                 Iniciar Treino
               </Button>
