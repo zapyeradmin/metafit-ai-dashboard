@@ -438,6 +438,105 @@ export type Database = {
         }
         Relationships: []
       }
+      user_physical_data_history: {
+        Row: {
+          allergies: string[] | null
+          ankle_circumference: number | null
+          blood_pressure_diastolic: number | null
+          blood_pressure_systolic: number | null
+          blood_type: string | null
+          body_frame: string | null
+          body_temperature: number | null
+          body_type: string | null
+          bone_density: number | null
+          created_at: string
+          data_date: string
+          dietary_restrictions: string[] | null
+          dominant_hand: string | null
+          id: string
+          meals_per_day: number | null
+          metabolic_age: number | null
+          metabolism_type: string | null
+          neck_circumference: number | null
+          preferred_training_time: string | null
+          recovery_time_hours: number | null
+          resting_heart_rate: number | null
+          sleep_hours_daily: number | null
+          stress_level: number | null
+          supplements: string[] | null
+          training_experience: string | null
+          training_frequency: number | null
+          user_id: string
+          visceral_fat_level: number | null
+          water_intake_daily: number | null
+          wrist_circumference: number | null
+        }
+        Insert: {
+          allergies?: string[] | null
+          ankle_circumference?: number | null
+          blood_pressure_diastolic?: number | null
+          blood_pressure_systolic?: number | null
+          blood_type?: string | null
+          body_frame?: string | null
+          body_temperature?: number | null
+          body_type?: string | null
+          bone_density?: number | null
+          created_at?: string
+          data_date?: string
+          dietary_restrictions?: string[] | null
+          dominant_hand?: string | null
+          id?: string
+          meals_per_day?: number | null
+          metabolic_age?: number | null
+          metabolism_type?: string | null
+          neck_circumference?: number | null
+          preferred_training_time?: string | null
+          recovery_time_hours?: number | null
+          resting_heart_rate?: number | null
+          sleep_hours_daily?: number | null
+          stress_level?: number | null
+          supplements?: string[] | null
+          training_experience?: string | null
+          training_frequency?: number | null
+          user_id: string
+          visceral_fat_level?: number | null
+          water_intake_daily?: number | null
+          wrist_circumference?: number | null
+        }
+        Update: {
+          allergies?: string[] | null
+          ankle_circumference?: number | null
+          blood_pressure_diastolic?: number | null
+          blood_pressure_systolic?: number | null
+          blood_type?: string | null
+          body_frame?: string | null
+          body_temperature?: number | null
+          body_type?: string | null
+          bone_density?: number | null
+          created_at?: string
+          data_date?: string
+          dietary_restrictions?: string[] | null
+          dominant_hand?: string | null
+          id?: string
+          meals_per_day?: number | null
+          metabolic_age?: number | null
+          metabolism_type?: string | null
+          neck_circumference?: number | null
+          preferred_training_time?: string | null
+          recovery_time_hours?: number | null
+          resting_heart_rate?: number | null
+          sleep_hours_daily?: number | null
+          stress_level?: number | null
+          supplements?: string[] | null
+          training_experience?: string | null
+          training_frequency?: number | null
+          user_id?: string
+          visceral_fat_level?: number | null
+          water_intake_daily?: number | null
+          wrist_circumference?: number | null
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           created_at: string
