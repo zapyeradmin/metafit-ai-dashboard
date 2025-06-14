@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { PhysicalDataHistory } from "@/hooks/usePhysicalDataHistory";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Eye, FilePdf } from "lucide-react";
+import { Eye, FileText } from "lucide-react";
 import PhysicalDataDetailsModal from "./PhysicalDataDetailsModal";
 import jsPDF from "jspdf";
 
@@ -124,7 +123,7 @@ const PhysicalDataHistoryTable: React.FC<TableProps> = ({ history, loading }) =>
                     <Eye className="w-4 h-4" />
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => handleExportPDF(item)} title="Exportar PDF">
-                    <FilePdf className="w-4 h-4 text-red-600" />
+                    <FileText className="w-4 h-4 text-red-600" />
                   </Button>
                 </td>
               </tr>
