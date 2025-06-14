@@ -184,7 +184,7 @@ const PhysicalDataForm = () => {
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-900">Dados Físicos e Nutricionais</h3>
         <div className="flex gap-2">
-          <Button variant={isAdding ? "default" : "outline"} onClick={() => setIsAdding(!isAdding)}>
+          <Button onClick={() => setIsAdding(!isAdding)}>
             {isAdding ? "Cancelar" : "Adicionar novos dados"}
           </Button>
         </div>
