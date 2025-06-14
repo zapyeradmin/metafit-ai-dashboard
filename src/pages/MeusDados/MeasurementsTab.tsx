@@ -1,12 +1,13 @@
-
 import React, { useState } from "react";
 import PersonalDataForm from "@/components/PersonalDataForm";
 import { useBodyMeasurements } from "@/hooks/useBodyMeasurements";
 import BodyMeasurementsForm from "@/components/BodyMeasurementsForm";
 import BodyMeasurementsTable from "@/components/BodyMeasurementsTable";
+import { Button } from "@/components/ui/button";
 
 const MeasurementsTab = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [formOpen, setFormOpen] = useState(false);
   const {
     measurements,
     addMeasurement,
@@ -27,18 +28,29 @@ const MeasurementsTab = () => {
       notes: data.notes || null,
     };
     await addMeasurement(processedData);
+    setFormOpen(false);
   };
 
   return (
     <div className="space-y-6">
-      <PersonalDataForm />
-      <BodyMeasurementsForm
-        date={date}
-        setDate={setDate}
-        onSubmit={handleFormSubmit}
-        measurements={measurements}
-        loading={loading}
-      />
+      <div className="flex items-center justify-between mb-2">
+        <div />
+        <Button
+          onClick={() => setFormOpen((o) => !o)}
+          className="ml-auto"
+        >
+          Adicionar Novas Medidas
+        </Button>
+      </div>
+      {formOpen && (
+        <BodyMeasurementsForm
+          date={date}
+          setDate={setDate}
+          onSubmit={handleFormSubmit}
+          measurements={measurements}
+          loading={loading}
+        />
+      )}
       <BodyMeasurementsTable
         measurements={measurements}
         loading={loading}
