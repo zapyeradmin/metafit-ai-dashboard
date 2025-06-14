@@ -4,10 +4,10 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable"; // Corrigido: novo import do plugin
+import autoTable from "jspdf-autotable";
+import { Eye, FileText } from "lucide-react";
 
 // REGISTRA o plugin como extensão do jsPDF
-// @ts-ignore
 if (typeof window !== "undefined") {
   // @ts-ignore
   jsPDF.API.autoTable = autoTable;
@@ -158,12 +158,25 @@ const BodyMeasurementsTable = ({ measurements, loading }: BodyMeasurementsTableP
                 <td className="pr-2 py-1">{m.waist ?? "-"}</td>
                 <td className="pr-2 py-1">{m.hips ?? "-"}</td>
                 <td className="pr-2 py-1">{m.thighs ?? "-"}</td>
-                <td className="pr-2 py-1 flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => { setSelected(m); setModalOpen(true); }}>
-                    Visualizar
+                <td className="pr-2 py-1 text-center flex gap-2 whitespace-nowrap">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setSelected(m);
+                      setModalOpen(true);
+                    }}
+                    title="Visualizar"
+                  >
+                    <Eye className="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => exportPdf(m)}>
-                    Exportar PDF
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => exportPdf(m)}
+                    title="Exportar PDF"
+                  >
+                    <FileText className="w-4 h-4 text-red-600" />
                   </Button>
                 </td>
               </tr>
@@ -181,3 +194,4 @@ const BodyMeasurementsTable = ({ measurements, loading }: BodyMeasurementsTableP
 };
 
 export default BodyMeasurementsTable;
+
