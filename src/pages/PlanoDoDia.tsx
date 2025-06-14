@@ -4,11 +4,14 @@ import { useWorkouts } from '@/hooks/useWorkouts';
 import { useNutrition } from '@/hooks/useNutrition';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DateSelector from '@/components/plano-do-dia/DateSelector';
 import WorkoutSection from '@/components/plano-do-dia/WorkoutSection';
 import NutritionSection from '@/components/plano-do-dia/NutritionSection';
 import DailySummary from '@/components/plano-do-dia/DailySummary';
 import LoadingSpinner from '@/components/plano-do-dia/LoadingSpinner';
+import MetabolicStats from '@/components/plano-do-dia/MetabolicStats';
+import NutritionStats from '@/components/plano-do-dia/NutritionStats';
 
 const PlanoDoDia = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -224,18 +227,29 @@ const PlanoDoDia = () => {
           onDateChange={setSelectedDate}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <WorkoutSection 
-            todayWorkout={todayWorkout}
-            workoutExercises={workoutExercises}
-            onCompleteExercise={handleCompleteExercise}
-          />
+        <Tabs defaultValue="treino" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="treino">Treino</TabsTrigger>
+            <TabsTrigger value="alimentacao">Alimentação</TabsTrigger>
+          </TabsList>
 
-          <NutritionSection 
-            todayMeals={todayMeals}
-            onCompleteMeal={handleCompleteMeal}
-          />
-        </div>
+          <TabsContent value="treino" className="space-y-6">
+            <MetabolicStats />
+            <WorkoutSection 
+              todayWorkout={todayWorkout}
+              workoutExercises={workoutExercises}
+              onCompleteExercise={handleCompleteExercise}
+            />
+          </TabsContent>
+
+          <TabsContent value="alimentacao" className="space-y-6">
+            <NutritionStats meals={todayMeals} />
+            <NutritionSection 
+              todayMeals={todayMeals}
+              onCompleteMeal={handleCompleteMeal}
+            />
+          </TabsContent>
+        </Tabs>
 
         <DailySummary />
       </div>

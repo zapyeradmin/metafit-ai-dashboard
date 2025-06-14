@@ -57,17 +57,19 @@ export const useBodyMeasurements = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('body_measurements')
         .insert({
           user_id: user.id,
           ...measurement
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         toast({
           title: "Erro",
-          description: "Erro ao salvar medidas",
+          description: "Erro ao salvar medida",
           variant: "destructive"
         });
         return;
@@ -76,22 +78,12 @@ export const useBodyMeasurements = () => {
       fetchMeasurements();
       toast({
         title: "Sucesso",
-        description: "Medidas salvas com sucesso!"
+        description: "Medida salva com sucesso!"
       });
     } catch (error) {
       console.error('Error adding measurement:', error);
     }
   };
 
-  const getLatestMeasurement = () => {
-    return measurements[0] || null;
-  };
-
-  return { 
-    measurements, 
-    loading, 
-    addMeasurement, 
-    getLatestMeasurement,
-    refetch: fetchMeasurements 
-  };
+  return { measurements, loading, addMeasurement, refetch: fetchMeasurements };
 };
