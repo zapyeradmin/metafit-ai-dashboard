@@ -1,128 +1,159 @@
-import React, { useState } from "react";
-import { PhysicalDataHistory } from "@/hooks/usePhysicalDataHistory";
+
+import React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Eye, FileText } from "lucide-react";
-import PhysicalDataDetailsModal from "./PhysicalDataDetailsModal";
 import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Eye, FileText } from "lucide-react";
 
-interface TableProps {
+// REGISTRA o plugin como extensão do jsPDF
+if (typeof window !== "undefined") {
+  // @ts-ignore
+  jsPDF.API.autoTable = autoTable;
+}
+
+interface PhysicalDataHistory {
+  id: string;
+  data_date: string;
+  body_type: string | null;
+  dominant_hand: string | null;
+  blood_type: string | null;
+  resting_heart_rate: number | null;
+  blood_pressure_systolic: number | null;
+  blood_pressure_diastolic: number | null;
+  body_temperature: number | null;
+  metabolism_type: string | null;
+  water_intake_daily: number | null;
+  sleep_hours_daily: number | null;
+  stress_level: number | null;
+  training_experience: string | null;
+  training_frequency: number | null;
+  preferred_training_time: string | null;
+  recovery_time_hours: number | null;
+  dietary_restrictions: string[] | null;
+  allergies: string[] | null;
+  supplements: string[] | null;
+  meals_per_day: number | null;
+  neck_circumference: number | null;
+  wrist_circumference: number | null;
+  ankle_circumference: number | null;
+  body_frame: string | null;
+  bone_density: number | null;
+  visceral_fat_level: number | null;
+  metabolic_age: number | null;
+  // ... outros campos se houver
+}
+
+interface Props {
   history: PhysicalDataHistory[];
   loading: boolean;
 }
 
-const FIELDS: Array<{ label: string; key: keyof PhysicalDataHistory }> = [
-  { label: "Data", key: "data_date" },
-  { label: "Tipo de Corpo", key: "body_type" },
-  { label: "Frequência de Treino", key: "training_frequency" },
-  { label: "Água (ml)", key: "water_intake_daily" },
-  { label: "Sono (h)", key: "sleep_hours_daily" },
-  { label: "Stress", key: "stress_level" },
-  { label: "FC Rep.", key: "resting_heart_rate" },
-  { label: "Pressão", key: "blood_pressure_systolic" }, // para exibir pressão formatada
-  { label: "Gordura Visceral", key: "visceral_fat_level" },
-];
+function exportPhysicalDataPdf(data: PhysicalDataHistory) {
+  const doc = new jsPDF();
+  doc.setFontSize(14);
+  doc.text("Histórico de Dados Físicos", 14, 14);
 
-const PhysicalDataHistoryTable: React.FC<TableProps> = ({ history, loading }) => {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selected, setSelected] = useState<PhysicalDataHistory | null>(null);
+  const columns = [
+    { header: "Campo", dataKey: "campo" },
+    { header: "Valor", dataKey: "valor" }
+  ];
+  const formatList = (arr: string[] | null) =>
+    arr && arr.length ? arr.join(", ") : "-";
 
-  if (loading) return <div>Carregando histórico...</div>;
-  if (!history || history.length === 0) return <div>Nenhum histórico salvo ainda.</div>;
+  const rows = [
+    { campo: "Data", valor: format(new Date(data.data_date), "dd/MM/yyyy", { locale: ptBR }) },
+    { campo: "Tipo Físico", valor: data.body_type ?? "-" },
+    { campo: "Mão Dominante", valor: data.dominant_hand ?? "-" },
+    { campo: "Tipo Sanguíneo", valor: data.blood_type ?? "-" },
+    { campo: "FC Repouso", valor: data.resting_heart_rate ?? "-" },
+    { campo: "PA Sistólica", valor: data.blood_pressure_systolic ?? "-" },
+    { campo: "PA Diastólica", valor: data.blood_pressure_diastolic ?? "-" },
+    { campo: "Temperatura", valor: data.body_temperature ?? "-" },
+    { campo: "Metabolismo", valor: data.metabolism_type ?? "-" },
+    { campo: "Água diária (ml)", valor: data.water_intake_daily ?? "-" },
+    { campo: "Horas de sono", valor: data.sleep_hours_daily ?? "-" },
+    { campo: "Estresse", valor: data.stress_level ?? "-" },
+    { campo: "Experiência Treino", valor: data.training_experience ?? "-" },
+    { campo: "Freq. Treino", valor: data.training_frequency ?? "-" },
+    { campo: "Horário preferido", valor: data.preferred_training_time ?? "-" },
+    { campo: "Tempo de recuperação", valor: data.recovery_time_hours ?? "-" },
+    { campo: "Restrições alimentares", valor: formatList(data.dietary_restrictions) },
+    { campo: "Alergias", valor: formatList(data.allergies) },
+    { campo: "Suplementos", valor: formatList(data.supplements) },
+    { campo: "Refeições/dia", valor: data.meals_per_day ?? "-" },
+    { campo: "Pescoço", valor: data.neck_circumference ?? "-" },
+    { campo: "Punho", valor: data.wrist_circumference ?? "-" },
+    { campo: "Tornozelo", valor: data.ankle_circumference ?? "-" },
+    { campo: "Tipo ósseo", valor: data.body_frame ?? "-" },
+    { campo: "Densidade óssea", valor: data.bone_density ?? "-" },
+    { campo: "Gordura visceral", valor: data.visceral_fat_level ?? "-" },
+    { campo: "Idade metabólica", valor: data.metabolic_age ?? "-" }
+  ];
 
-  function handleVisualizar(item: PhysicalDataHistory) {
-    setSelected(item);
-    setModalOpen(true);
-  }
+  // @ts-ignore
+  doc.autoTable({
+    startY: 24,
+    columns,
+    body: rows,
+    styles: { fontSize: 12 },
+    headStyles: { fillColor: [100, 100, 255] }
+  });
 
-  function handleExportPDF(item: PhysicalDataHistory) {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Dados Físicos", 10, 16);
-    doc.setFontSize(12);
+  doc.save("dados-fisicos.pdf");
+}
 
-    let y = 30;
-    doc.text(`Data: ${format(new Date(item.data_date), "dd/MM/yyyy", { locale: ptBR })}`, 10, y);
-    y += 8;
-    for (const [label, key] of [
-      ["Tipo de Corpo", "body_type"],
-      ["Mão Dominante", "dominant_hand"],
-      ["Tipo Sanguíneo", "blood_type"],
-      ["Frequência de Treino", "training_frequency"],
-      ["Experiência de Treino", "training_experience"],
-      ["Horário Preferido de Treino", "preferred_training_time"],
-      ["Tempo de Recuperação (h)", "recovery_time_hours"],
-      ["FC Repouso", "resting_heart_rate"],
-      ["Pressão", ""],
-      ["Temperatura (C°)", "body_temperature"],
-      ["Metabolismo", "metabolism_type"],
-      ["Água (ml)", "water_intake_daily"],
-      ["Sono (h)", "sleep_hours_daily"],
-      ["Stress", "stress_level"],
-      ["Restrição Alimentar", "dietary_restrictions"],
-      ["Alergias", "allergies"],
-      ["Suplementos", "supplements"],
-      ["Refeições por dia", "meals_per_day"],
-      ["Circunf. Pescoço (cm)", "neck_circumference"],
-      ["Circunf. Punho (cm)", "wrist_circumference"],
-      ["Circunf. Tornozelo (cm)", "ankle_circumference"],
-      ["Biótipo", "body_frame"],
-      ["Densidade Óssea", "bone_density"],
-      ["Gordura Visceral", "visceral_fat_level"],
-      ["Idade Metabólica", "metabolic_age"],
-    ]) {
-      if (label === "Pressão") {
-        const sys = item.blood_pressure_systolic;
-        const dia = item.blood_pressure_diastolic;
-        doc.text(`${label}: ${sys && dia ? `${sys}/${dia}` : "-"}`, 10, y);
-      } else {
-        const value = (item as any)[key];
-        doc.text(`${label}: ${Array.isArray(value) ? value.join(", ") : value ?? "-"}`, 10, y);
-      }
-      y += 8;
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-      }
-    }
-
-    doc.save(`dados-fisicos-${format(new Date(item.data_date), "yyyy-MM-dd")}.pdf`);
-  }
-
+const PhysicalDataHistoryTable: React.FC<Props> = ({ history, loading }) => {
   return (
-    <div className="mt-4">
-      <h4 className="font-semibold mb-2">Histórico de Dados Físicos</h4>
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-xs md:text-sm border divide-y divide-gray-200">
+    <div>
+      <h4 className="font-semibold mt-4 mb-2">Histórico de Dados Físicos</h4>
+      {loading ? (
+        <div>Carregando...</div>
+      ) : history.length === 0 ? (
+        <div>Nenhum dado físico cadastrado.</div>
+      ) : (
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead>
-            <tr className="bg-gray-100">
-              {FIELDS.map((f) => (
-                <th className="py-1 px-2 text-left" key={f.label}>{f.label}</th>
-              ))}
-              <th className="py-1 px-2 text-center">Ações</th>
+            <tr>
+              <th className="pr-2 py-1 text-left">Data</th>
+              <th className="pr-2 py-1 text-left">Tipo Físico</th>
+              <th className="pr-2 py-1 text-left">FC Repouso</th>
+              <th className="pr-2 py-1 text-left">PA Sist.</th>
+              <th className="pr-2 py-1 text-left">PA Diast.</th>
+              <th className="pr-2 py-1 text-left">Metabolismo</th>
+              <th className="pr-2 py-1 text-left">Exercício</th>
+              <th className="pr-2 py-1 text-left">Sono</th>
+              <th className="pr-2 py-1 text-left">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {history.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50">
-                <td className="py-1 px-2">{format(new Date(item.data_date), "dd/MM/yyyy", { locale: ptBR })}</td>
-                <td className="py-1 px-2">{item.body_type || "-"}</td>
-                <td className="py-1 px-2">{item.training_frequency ?? "-"}</td>
-                <td className="py-1 px-2">{item.water_intake_daily ?? "-"}</td>
-                <td className="py-1 px-2">{item.sleep_hours_daily ?? "-"}</td>
-                <td className="py-1 px-2">{item.stress_level ?? "-"}</td>
-                <td className="py-1 px-2">{item.resting_heart_rate ?? "-"}</td>
-                <td className="py-1 px-2">
-                  {item.blood_pressure_systolic && item.blood_pressure_diastolic
-                    ? `${item.blood_pressure_systolic}/${item.blood_pressure_diastolic}` : "-"}
-                </td>
-                <td className="py-1 px-2">{item.visceral_fat_level ?? "-"}</td>
-                <td className="py-1 px-2 text-center flex gap-2 whitespace-nowrap">
-                  <Button size="sm" variant="ghost" onClick={() => handleVisualizar(item)} title="Visualizar">
+            {history.map((h) => (
+              <tr key={h.id}>
+                <td className="pr-2 py-1">{format(new Date(h.data_date), "dd/MM/yyyy", { locale: ptBR })}</td>
+                <td className="pr-2 py-1">{h.body_type ?? "-"}</td>
+                <td className="pr-2 py-1">{h.resting_heart_rate ?? "-"}</td>
+                <td className="pr-2 py-1">{h.blood_pressure_systolic ?? "-"}</td>
+                <td className="pr-2 py-1">{h.blood_pressure_diastolic ?? "-"}</td>
+                <td className="pr-2 py-1">{h.metabolism_type ?? "-"}</td>
+                <td className="pr-2 py-1">{h.training_experience ?? "-"}</td>
+                <td className="pr-2 py-1">{h.sleep_hours_daily ?? "-"}</td>
+                <td className="pr-2 py-1 text-center flex gap-2 whitespace-nowrap">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    // Modal de visualização pode ser adicionado aqui se quiser.
+                    title="Visualizar"
+                    disabled
+                  >
                     <Eye className="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleExportPDF(item)} title="Exportar PDF">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => exportPhysicalDataPdf(h)}
+                    title="Exportar PDF"
+                  >
                     <FileText className="w-4 h-4 text-red-600" />
                   </Button>
                 </td>
@@ -130,8 +161,7 @@ const PhysicalDataHistoryTable: React.FC<TableProps> = ({ history, loading }) =>
             ))}
           </tbody>
         </table>
-      </div>
-      <PhysicalDataDetailsModal open={modalOpen} onClose={() => setModalOpen(false)} data={selected} />
+      )}
     </div>
   );
 };
