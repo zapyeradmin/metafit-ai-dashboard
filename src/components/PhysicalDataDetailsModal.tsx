@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -68,7 +67,9 @@ const PhysicalDataDetailsModal: React.FC<Props> = ({ open, onClose, data }) => {
           </table>
         </div>
         <DialogFooter>
-          <Button variant="secondary" onClick={onClose}>Fechar</Button>
+          <Button onClick={onClose}>
+            Fechar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
