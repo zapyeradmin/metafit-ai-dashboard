@@ -14,6 +14,14 @@ import {
 import { useForm } from 'react-hook-form';
 import PhysicalDataHistoryTable from './PhysicalDataHistoryTable';
 
+import PhysicalBasicInfoForm from "./PhysicalBasicInfoForm";
+import HealthInfoForm from "./HealthInfoForm";
+import MetabolicInfoForm from "./MetabolicInfoForm";
+import TrainingInfoForm from "./TrainingInfoForm";
+import NutritionalInfoForm from "./NutritionalInfoForm";
+import SpecificMeasuresForm from "./SpecificMeasuresForm";
+import BodyCompositionForm from "./BodyCompositionForm";
+
 const PhysicalDataForm = () => {
   const { physicalData, updatePhysicalData, loading } = usePhysicalData();
   const { history, loading: loadingHistory, addToHistory } = usePhysicalDataHistory();
@@ -193,6 +201,7 @@ const PhysicalDataForm = () => {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {isAdding && (
+            
             <FormField
               control={form.control}
               name="data_date"
@@ -209,432 +218,25 @@ const PhysicalDataForm = () => {
           )}
 
           {/* Informações Físicas Básicas */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-4">Informações Físicas Básicas</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="body_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo Corporal</FormLabel>
-                    <FormControl>
-                      <select {...field} disabled={!isAdding} className="w-full p-2 border rounded">
-                        <option value="">Selecione</option>
-                        <option value="ectomorfo">Ectomorfo</option>
-                        <option value="mesomorfo">Mesomorfo</option>
-                        <option value="endomorfo">Endomorfo</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="dominant_hand"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mão Dominante</FormLabel>
-                    <FormControl>
-                      <select {...field} disabled={!isAdding} className="w-full p-2 border rounded">
-                        <option value="">Selecione</option>
-                        <option value="destro">Destro</option>
-                        <option value="canhoto">Canhoto</option>
-                        <option value="ambidestro">Ambidestro</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="blood_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo Sanguíneo</FormLabel>
-                    <FormControl>
-                      <select {...field} disabled={!isAdding} className="w-full p-2 border rounded">
-                        <option value="">Selecione</option>
-                        <option value="A+">A+</option>
-                        <option value="A-">A-</option>
-                        <option value="B+">B+</option>
-                        <option value="B-">B-</option>
-                        <option value="AB+">AB+</option>
-                        <option value="AB-">AB-</option>
-                        <option value="O+">O+</option>
-                        <option value="O-">O-</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+          <PhysicalBasicInfoForm control={form.control} isAdding={isAdding} />
 
           {/* Informações de Saúde */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-4">Informações de Saúde</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <FormField
-                control={form.control}
-                name="resting_heart_rate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>FC Repouso (bpm)</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" disabled={!isAdding} placeholder="72" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="blood_pressure_systolic"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pressão Sistólica</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" disabled={!isAdding} placeholder="120" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="blood_pressure_diastolic"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pressão Diastólica</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" disabled={!isAdding} placeholder="80" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="body_temperature"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Temperatura (°C)</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" step="0.1" disabled={!isAdding} placeholder="36.5" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+          <HealthInfoForm control={form.control} isAdding={isAdding} />
 
           {/* Informações Metabólicas */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-4">Informações Metabólicas</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <FormField
-                control={form.control}
-                name="metabolism_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Metabolismo</FormLabel>
-                    <FormControl>
-                      <select {...field} disabled={!isAdding} className="w-full p-2 border rounded">
-                        <option value="">Selecione</option>
-                        <option value="lento">Lento</option>
-                        <option value="normal">Normal</option>
-                        <option value="acelerado">Acelerado</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="water_intake_daily"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Água Diária (ml)</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" disabled={!isAdding} placeholder="2000" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="sleep_hours_daily"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Horas de Sono</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" step="0.5" disabled={!isAdding} placeholder="8" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="stress_level"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nível de Stress (1-10)</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" min="1" max="10" disabled={!isAdding} placeholder="5" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+          <MetabolicInfoForm control={form.control} isAdding={isAdding} />
 
           {/* Informações de Treino */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-4">Informações de Treino</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <FormField
-                control={form.control}
-                name="training_experience"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Experiência</FormLabel>
-                    <FormControl>
-                      <select {...field} disabled={!isAdding} className="w-full p-2 border rounded">
-                        <option value="">Selecione</option>
-                        <option value="iniciante">Iniciante</option>
-                        <option value="intermediario">Intermediário</option>
-                        <option value="avancado">Avançado</option>
-                        <option value="expert">Expert</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="training_frequency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Frequência (x/semana)</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" disabled={!isAdding} placeholder="5" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="preferred_training_time"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Horário Preferido</FormLabel>
-                    <FormControl>
-                      <select {...field} disabled={!isAdding} className="w-full p-2 border rounded">
-                        <option value="">Selecione</option>
-                        <option value="manha">Manhã</option>
-                        <option value="tarde">Tarde</option>
-                        <option value="noite">Noite</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="recovery_time_hours"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Recuperação (horas)</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" disabled={!isAdding} placeholder="48" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+          <TrainingInfoForm control={form.control} isAdding={isAdding} />
 
           {/* Informações Nutricionais */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-4">Informações Nutricionais</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="dietary_restrictions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Restrições Alimentares</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={!isAdding} placeholder="vegetariano, sem lactose" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="allergies"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Alergias</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={!isAdding} placeholder="amendoim, frutos do mar" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="supplements"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Suplementos</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={!isAdding} placeholder="whey protein, creatina" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="meals_per_day"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Refeições por Dia</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" disabled={!isAdding} placeholder="6" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+          <NutritionalInfoForm control={form.control} isAdding={isAdding} />
 
           {/* Medidas Específicas */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-4">Medidas Específicas</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <FormField
-                control={form.control}
-                name="neck_circumference"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pescoço (cm)</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" step="0.1" disabled={!isAdding} placeholder="38.5" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="wrist_circumference"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pulso (cm)</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" step="0.1" disabled={!isAdding} placeholder="16.5" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="ankle_circumference"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tornozelo (cm)</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" step="0.1" disabled={!isAdding} placeholder="22.5" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="body_frame"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estrutura Corporal</FormLabel>
-                    <FormControl>
-                      <select {...field} disabled={!isAdding} className="w-full p-2 border rounded">
-                        <option value="">Selecione</option>
-                        <option value="pequeno">Pequeno</option>
-                        <option value="medio">Médio</option>
-                        <option value="grande">Grande</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+          <SpecificMeasuresForm control={form.control} isAdding={isAdding} />
 
           {/* Composição Corporal */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-4">Composição Corporal</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="bone_density"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Densidade Óssea</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" step="0.01" disabled={!isAdding} placeholder="1.2" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="visceral_fat_level"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gordura Visceral</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" disabled={!isAdding} placeholder="8" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="metabolic_age"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Idade Metabólica</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" disabled={!isAdding} placeholder="25" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+          <BodyCompositionForm control={form.control} isAdding={isAdding} />
 
           <div className="flex justify-end space-x-4">
             <Button type="submit" disabled={loading || loadingHistory}>
