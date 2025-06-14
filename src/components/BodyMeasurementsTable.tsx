@@ -4,7 +4,14 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable"; // Corrigido: novo import do plugin
+
+// REGISTRA o plugin como extensão do jsPDF
+// @ts-ignore
+if (typeof window !== "undefined") {
+  // @ts-ignore
+  jsPDF.API.autoTable = autoTable;
+}
 
 interface BodyMeasurementsTableProps {
   measurements: any[];
@@ -34,6 +41,7 @@ function exportPdf(measurement: any) {
     { campo: "Notas", valor: measurement.notes ?? "-" },
   ];
 
+  // Usa o método via API do jsPDF
   // @ts-ignore
   doc.autoTable({
     startY: 24,
