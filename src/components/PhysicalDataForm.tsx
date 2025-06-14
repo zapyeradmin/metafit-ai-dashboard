@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { usePhysicalData } from '@/hooks/usePhysicalData';
 import { usePhysicalDataHistory } from '@/hooks/usePhysicalDataHistory';
@@ -22,6 +21,8 @@ import TrainingInfoForm from "./TrainingInfoForm";
 import NutritionalInfoForm from "./NutritionalInfoForm";
 import SpecificMeasuresForm from "./SpecificMeasuresForm";
 import BodyCompositionForm from "./BodyCompositionForm";
+import AddPhysicalDataButton from "./AddPhysicalDataButton";
+import PhysicalDataNewForm from "./PhysicalDataNewForm";
 
 const PhysicalDataForm = () => {
   const { physicalData, updatePhysicalData, loading } = usePhysicalData();
@@ -62,7 +63,6 @@ const PhysicalDataForm = () => {
 
   useEffect(() => {
     if (isAdding) {
-      // Limpa todos os campos ao iniciar adição.
       form.reset({
         body_type: '',
         dominant_hand: '',
@@ -96,7 +96,6 @@ const PhysicalDataForm = () => {
   }, [isAdding, form]);
 
   const onSubmit = async (data: any) => {
-    // Adição ao histórico
     if (isAdding) {
       const processedData = {
         data_date: data.data_date || new Date().toISOString().substring(0, 10),
@@ -134,63 +133,18 @@ const PhysicalDataForm = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-900">Dados Físicos e Nutricionais</h3>
-        <Button onClick={() => setIsAdding(true)}>
-          Adicionar novos dados
-        </Button>
-      </div>
+      <h3 className="text-lg font-semibold text-gray-900">Dados Físicos e Nutricionais</h3>
+
+      <AddPhysicalDataButton onClick={() => setIsAdding(true)} />
 
       {isAdding && (
-        <div className="my-4 border rounded-md p-4">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="data_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="date" required />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Informações Físicas Básicas */}
-              <PhysicalBasicInfoForm control={form.control} isAdding={true} />
-
-              {/* Informações de Saúde */}
-              <HealthInfoForm control={form.control} isAdding={true} />
-
-              {/* Informações Metabólicas */}
-              <MetabolicInfoForm control={form.control} isAdding={true} />
-
-              {/* Informações de Treino */}
-              <TrainingInfoForm control={form.control} isAdding={true} />
-
-              {/* Informações Nutricionais */}
-              <NutritionalInfoForm control={form.control} isAdding={true} />
-
-              {/* Medidas Específicas */}
-              <SpecificMeasuresForm control={form.control} isAdding={true} />
-
-              {/* Composição Corporal */}
-              <BodyCompositionForm control={form.control} isAdding={true} />
-
-              <div className="flex justify-end space-x-4">
-                <Button type="button" variant="outline" onClick={() => setIsAdding(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={loading || loadingHistory}>
-                  Salvar Novos Dados Físicos
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </div>
+        <PhysicalDataNewForm
+          form={form}
+          onSubmit={onSubmit}
+          onCancel={() => setIsAdding(false)}
+          loading={loading}
+          loadingHistory={loadingHistory}
+        />
       )}
 
       <PhysicalDataHistoryTable history={history} loading={loadingHistory} />
