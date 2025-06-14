@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -30,6 +31,15 @@ const Layout = ({ children }: LayoutProps) => {
         variant: "destructive"
       });
     }
+  };
+
+  const getInitials = (name?: string | null) => {
+    if (!name) return 'U';
+    return name.split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   const menuItems = [
@@ -74,11 +84,12 @@ const Layout = ({ children }: LayoutProps) => {
         </div>
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center">
-            <img 
-              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" 
-              alt="Perfil" 
-              className="w-10 h-10 rounded-full object-cover"
-            />
+            <Avatar className="w-10 h-10">
+              <AvatarImage src={profile?.avatar_url || undefined} alt="Perfil" />
+              <AvatarFallback>
+                {getInitials(profile?.full_name)}
+              </AvatarFallback>
+            </Avatar>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-900">
                 {profile?.full_name || 'Usuário'}
@@ -121,11 +132,12 @@ const Layout = ({ children }: LayoutProps) => {
                   </button>
                   <div className="ml-3 relative">
                     <div className="md:hidden">
-                      <img 
-                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" 
-                        alt="Perfil" 
-                        className="w-8 h-8 rounded-full object-cover"
-                      />
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={profile?.avatar_url || undefined} alt="Perfil" />
+                        <AvatarFallback className="text-xs">
+                          {getInitials(profile?.full_name)}
+                        </AvatarFallback>
+                      </Avatar>
                     </div>
                   </div>
                 </div>
@@ -176,11 +188,12 @@ const Layout = ({ children }: LayoutProps) => {
             </div>
             <div className="p-4 border-t border-gray-200">
               <div className="flex items-center">
-                <img 
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" 
-                  alt="Perfil" 
-                  className="w-10 h-10 rounded-full object-cover"
-                />
+                <Avatar className="w-10 h-10">
+                  <AvatarImage src={profile?.avatar_url || undefined} alt="Perfil" />
+                  <AvatarFallback>
+                    {getInitials(profile?.full_name)}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-900">
                     {profile?.full_name || 'Usuário'}

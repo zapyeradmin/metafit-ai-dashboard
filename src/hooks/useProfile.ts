@@ -15,6 +15,7 @@ export interface Profile {
   fitness_goal: string | null;
   activity_level: string | null;
   gym_name: string | null;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 }

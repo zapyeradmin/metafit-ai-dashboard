@@ -5,9 +5,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import AvatarUpload from '@/components/AvatarUpload';
 
 const MeuPerfil = () => {
-  const { profile, updateProfile, loading } = useProfile();
+  const { profile, updateProfile, loading, refetch } = useProfile();
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -62,6 +63,30 @@ const MeuPerfil = () => {
     await updateProfile(updateData);
   };
 
+  const handleAvatarUpdate = (url: string) => {
+    refetch();
+  };
+
+  const handleCancel = () => {
+    if (profile) {
+      setFormData({
+        full_name: profile.full_name || '',
+        birth_date: profile.birth_date || '',
+        gender: profile.gender || '',
+        height: profile.height?.toString() || '',
+        current_weight: profile.current_weight?.toString() || '',
+        goal_weight: profile.goal_weight?.toString() || '',
+        fitness_goal: profile.fitness_goal || '',
+        activity_level: profile.activity_level || '',
+        gym_name: profile.gym_name || ''
+      });
+      toast({
+        title: "Cancelado",
+        description: "Alterações descartadas"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
@@ -84,19 +109,13 @@ const MeuPerfil = () => {
         <div className="bg-white rounded-lg shadow-sm p-6">
           {/* Profile Header */}
           <div className="flex items-center mb-8 pb-6 border-b border-gray-200">
-            <img 
-              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" 
-              alt="Perfil" 
-              className="w-20 h-20 rounded-full object-cover"
+            <AvatarUpload
+              currentAvatar={profile?.avatar_url}
+              fullName={formData.full_name}
+              onAvatarUpdate={handleAvatarUpdate}
             />
             <div className="ml-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                {formData.full_name || 'Usuário'}
-              </h2>
               <p className="text-sm text-gray-600">{user?.email}</p>
-              <Button variant="outline" size="sm" className="mt-2">
-                Alterar Foto
-              </Button>
             </div>
           </div>
 
@@ -253,7 +272,7 @@ const MeuPerfil = () => {
 
             {/* Action Buttons */}
             <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" onClick={handleCancel}>
                 Cancelar
               </Button>
               <Button type="submit">
