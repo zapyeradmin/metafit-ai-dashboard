@@ -52,6 +52,10 @@ export const useBodyMeasurements = () => {
     }
   };
 
+  const getLatestMeasurement = () => {
+    return measurements.length > 0 ? measurements[0] : null;
+  };
+
   const addMeasurement = async (measurement: Omit<BodyMeasurement, 'id' | 'user_id' | 'created_at'>) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -85,5 +89,5 @@ export const useBodyMeasurements = () => {
     }
   };
 
-  return { measurements, loading, addMeasurement, refetch: fetchMeasurements };
+  return { measurements, loading, addMeasurement, getLatestMeasurement, refetch: fetchMeasurements };
 };
