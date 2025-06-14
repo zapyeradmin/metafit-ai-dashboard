@@ -124,14 +124,14 @@ export const useMetabolicCalculations = () => {
     // Cálculo do percentual de gordura corporal usando circunferências
     let bodyFatPercentage = latestMeasurement?.body_fat_percentage || 0;
     
-    if (!bodyFatPercentage && physicalData?.neck_circumference && physicalData?.waist) {
+    if (!bodyFatPercentage && physicalData?.neck_circumference && latestMeasurement?.waist) {
       // Fórmula da Marinha Americana para homens
       if (gender === 'male') {
-        bodyFatPercentage = 495 / (1.0324 - 0.19077 * Math.log10(latestMeasurement?.waist || physicalData.waist || 80) + 0.15456 * Math.log10(physicalData.neck_circumference)) - 450;
+        bodyFatPercentage = 495 / (1.0324 - 0.19077 * Math.log10(latestMeasurement.waist) + 0.15456 * Math.log10(physicalData.neck_circumference)) - 450;
       } else {
         // Para mulheres, inclui circunferência do quadril
         const hips = latestMeasurement?.hips || 90;
-        bodyFatPercentage = 495 / (1.29579 - 0.35004 * Math.log10(latestMeasurement?.waist || physicalData.waist || 70) + 0.22100 * Math.log10(hips) - 0.35004 * Math.log10(physicalData.neck_circumference)) - 450;
+        bodyFatPercentage = 495 / (1.29579 - 0.35004 * Math.log10(latestMeasurement.waist) + 0.22100 * Math.log10(hips) - 0.35004 * Math.log10(physicalData.neck_circumference)) - 450;
       }
     }
 
