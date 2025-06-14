@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Form,
@@ -17,14 +16,8 @@ import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-
-interface BodyMeasurementsFormProps {
-  date: Date | undefined;
-  setDate: (d: Date | undefined) => void;
-  onSubmit: (data: any) => Promise<void>;
-  measurements: any[];
-  loading: boolean;
-}
+import BodyMeasurementsFields from "./BodyMeasurementsFields";
+import BodyMeasurementsDatePicker from "./BodyMeasurementsDatePicker";
 
 const BodyMeasurementsForm = ({
   date,
@@ -32,7 +25,7 @@ const BodyMeasurementsForm = ({
   onSubmit,
   measurements,
   loading,
-}: BodyMeasurementsFormProps) => {
+}: any) => {
   const { toast } = useToast();
 
   const form = useForm({
@@ -88,155 +81,11 @@ const BodyMeasurementsForm = ({
     <div className="border rounded-md p-4 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Medidas Corporais</h3>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant={"outline"}
-              className={
-                "h-8 w-[220px] justify-start text-left font-normal" +
-                (!date ? "text-muted-foreground" : "")
-              }
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {date
-                ? format(date, "dd/MM/yyyy", { locale: ptBR })
-                : <span>Escolha uma data</span>
-              }
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="center" side="bottom">
-            <Calendar
-              mode="single"
-              locale={ptBR}
-              selected={date}
-              onSelect={setDate}
-              disabled={(d) => d > new Date()}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+        <BodyMeasurementsDatePicker date={date} setDate={setDate} />
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="weight"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Peso (kg)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.1" placeholder="70.5" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="arms"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Braços (cm)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.1" placeholder="32.0" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="chest"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Peito (cm)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.1" placeholder="95.0" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="waist"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cintura (cm)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.1" placeholder="80.0" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="hips"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quadril (cm)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.1" placeholder="100.0" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="thighs"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Coxas (cm)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.1" placeholder="55.0" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="body_fat_percentage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>% Gordura Corporal</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.1" placeholder="20.0" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="muscle_mass"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Massa Muscular (kg)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.1" placeholder="60.0" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <FormField
-            control={form.control}
-            name="notes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Notas</FormLabel>
-                <FormControl>
-                  <Input placeholder="Como foi o dia, observações..." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <BodyMeasurementsFields control={form.control} loading={loading} />
           <div className="flex justify-end space-x-2">
             <Button type="submit" disabled={loading}>Salvar Medidas</Button>
           </div>
