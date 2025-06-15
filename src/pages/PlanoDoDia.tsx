@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DateSelector from '@/components/plano-do-dia/DateSelector';
@@ -10,6 +11,8 @@ import NutritionStats from '@/components/plano-do-dia/NutritionStats';
 import { usePlanoDoDiaController } from '@/hooks/usePlanoDoDiaController';
 import WorkoutPreferencesForm from "@/components/workouts/WorkoutPreferencesForm";
 import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { useGenerateWorkoutPlan } from "@/hooks/useGenerateWorkoutPlan";
 
 const PlanoDoDia = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -22,6 +25,7 @@ const PlanoDoDia = () => {
     handleCompleteMeal
   } = usePlanoDoDiaController(selectedDate);
   const { user } = useAuth();
+  const { generate, loading: loadingGerarPlano } = useGenerateWorkoutPlan(user?.id);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -30,9 +34,16 @@ const PlanoDoDia = () => {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Plano do Dia</h1>
-          <p className="mt-1 text-sm text-gray-600">Organize seu treino e alimentação de hoje.</p>
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Plano do Dia</h1>
+            <p className="mt-1 text-sm text-gray-600">Organize seu treino e alimentação de hoje.</p>
+          </div>
+          {user && (
+            <Button onClick={generate} disabled={loadingGerarPlano} className="w-fit">
+              {loadingGerarPlano ? "Gerando plano..." : "Gerar Plano Automático"}
+            </Button>
+          )}
         </div>
 
         {user && (
@@ -78,3 +89,4 @@ const PlanoDoDia = () => {
 };
 
 export default PlanoDoDia;
+
