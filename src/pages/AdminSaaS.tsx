@@ -120,7 +120,7 @@ function useAdminSaaS() {
       setPlans(prev => {
         if (plan.id) return prev.map(p => (p.id === plan.id ? { ...p, ...plan } as Plan : p));
         // Defensive: check data is not null and is array and has items
-        if (data && Array.isArray(data) && data.length > 0) return prev.concat(data[0]);
+        if (data && Array.isArray(data) && (data as any[]).length > 0) return prev.concat((data as any[])[0]);
         return prev;
       });
     }
@@ -147,7 +147,7 @@ function useAdminSaaS() {
       setGateways(prev => {
         if (gw.id) return prev.map(g => (g.id === gw.id ? { ...g, ...gw } as Gateway : g));
         // Defensive: check data is not null and is array and has items
-        if (data && Array.isArray(data) && data.length > 0) return prev.concat(data[0]);
+        if (data && Array.isArray(data) && (data as any[]).length > 0) return prev.concat((data as any[])[0]);
         return prev;
       });
     }
