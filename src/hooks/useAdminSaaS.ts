@@ -1,8 +1,8 @@
 
 // Wrapper que importa e expõe todos hooks refatorados:
-import { useAdminPlans } from "./useAdminPlans";
-import { useAdminGateways } from "./useAdminGateways";
-import { useAdminUsers } from "./useAdminUsers";
+import { useAdminPlans, Plan } from "./useAdminPlans";
+import { useAdminGateways, Gateway } from "./useAdminGateways";
+import { useAdminUsers, User, UserSubscription } from "./useAdminUsers";
 
 export function useAdminSaaS() {
   const { plans, loading: loadingPlans, savePlan, deletePlan } = useAdminPlans();
@@ -33,3 +33,6 @@ export function useAdminSaaS() {
     setUserPermission,
   };
 }
+
+// Re-export types for compatibility
+export type { Plan, Gateway, User, UserSubscription };
