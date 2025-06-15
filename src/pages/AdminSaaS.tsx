@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 // Import Json type for stricter typing
 import type { Json } from "@/integrations/supabase/types";
+import PlanForm from "@/components/saas/PlanForm";
+import GatewayForm from "@/components/saas/GatewayForm";
+import { useAdminSaaS } from "@/hooks/useAdminSaaS";
 
 type Plan = {
   id: string;
@@ -47,114 +50,6 @@ type UserSubscription = {
   cancel_at_period_end: boolean;
   plan: Plan | null;
 };
-
-function useAdminSaaS() {
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [gateways, setGateways] = useState<Gateway[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      // Planos
-      const { data: plansDb } = await supabase.from("plans").select("*").order("price_monthly");
-      setPlans(plansDb || []);
-      // Gateways
-      const { data: gatewaysDb } = await supabase.from("payment_gateways").select("*");
-      setGateways(gatewaysDb || []);
-      // Usuários (busca perfis)
-      const { data: usersDb } = await supabase.from("profiles").select("user_id, full_name");
-      // Busca emails na auth.users (amostra, sem limit param)
-      const authRes = await supabase.auth.admin.listUsers();
-      let usersFinal: User[] = [];
-      if (
-        Array.isArray(usersDb) &&
-        authRes &&
-        authRes.data &&
-        Array.isArray(authRes.data.users)
-      ) {
-        usersFinal = usersDb.map((p: any) => {
-          const authUser =
-            authRes.data.users.find((u: any) => u.id === p.user_id);
-          return {
-            id: p.user_id,
-            email: authUser?.email ?? "",
-            full_name: p.full_name || "",
-          };
-        });
-      }
-      setUsers(usersFinal);
-      // Subs
-      const { data: subsDb } = await supabase
-        .from("user_subscriptions")
-        .select("*, plan:plan_id(*)");
-      setSubscriptions(subsDb || []);
-      setLoading(false);
-    })();
-  }, []);
-
-  // Salva/atualiza plano
-  async function savePlan(plan: Partial<Plan>) {
-    // Only pass valid fields required by table type
-    const upsertData = {
-      id: plan.id,
-      name: plan.name ?? "",
-      description: plan.description ?? "",
-      price_monthly: plan.price_monthly ?? 0,
-      price_yearly: plan.price_yearly ?? 0,
-      discount_percent_yearly: plan.discount_percent_yearly ?? 0,
-      resource_limits: plan.resource_limits ?? null,
-      is_active: plan.is_active ?? true,
-      updated_at: new Date().toISOString(),
-    };
-    const { data, error } = await supabase
-      .from("plans")
-      .upsert([upsertData], { onConflict: "id" });
-    if (error) {
-      toast({ title: "Erro ao salvar plano", description: error.message, variant: "destructive" });
-    }
-    else {
-      toast({ title: "Plano salvo!" });
-      setPlans(prev => {
-        if (plan.id) return prev.map(p => (p.id === plan.id ? { ...p, ...plan } as Plan : p));
-        // Defensive: check data is not null and is array and has items
-        if (data && Array.isArray(data) && (data as any[]).length > 0) return prev.concat((data as any[])[0]);
-        return prev;
-      });
-    }
-  }
-
-  // Salva/atualiza gateway
-  async function saveGateway(gw: Partial<Gateway>) {
-    // name/provider are required, credentials must be a Json
-    const upsertData = {
-      id: gw.id,
-      name: gw.name ?? "",
-      provider: gw.provider ?? "",
-      is_active: gw.is_active ?? true,
-      credentials: gw.credentials ?? null,
-      updated_at: new Date().toISOString(),
-    };
-    const { data, error } = await supabase
-      .from("payment_gateways")
-      .upsert([upsertData], { onConflict: "id" });
-    if (error) {
-      toast({ title: "Erro ao salvar gateway", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Gateway salvo!" });
-      setGateways(prev => {
-        if (gw.id) return prev.map(g => (g.id === gw.id ? { ...g, ...gw } as Gateway : g));
-        // Defensive: check data is not null and is array and has items
-        if (data && Array.isArray(data) && (data as any[]).length > 0) return prev.concat((data as any[])[0]);
-        return prev;
-      });
-    }
-  }
-
-  return { plans, gateways, users, subscriptions, loading, savePlan, saveGateway };
-}
 
 export default function AdminSaaSPage() {
   const { plans, gateways, users, subscriptions, loading, savePlan, saveGateway } = useAdminSaaS();
@@ -262,59 +157,5 @@ export default function AdminSaaSPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-// Formulário de Plano (simplificado)
-function PlanForm({ initial, onCancel, onSave }:
-  { initial?: Partial<Plan> | null, onCancel: () => void, onSave: (p: Partial<Plan>) => void }
-) {
-  const [form, setForm] = useState<Partial<Plan>>({
-    ...initial,
-    resource_limits: initial && typeof initial.resource_limits !== "undefined" ? initial.resource_limits : null,
-    is_active: initial?.is_active ?? true,
-  });
-  return (
-    <form onSubmit={e => { e.preventDefault(); onSave(form); }} className="space-y-2">
-      <Label>Nome</Label>
-      <Input value={form.name || ""} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required autoFocus />
-      <Label>Descrição</Label>
-      <Input value={form.description || ""} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-      <Label>Preço Mensal (R$)</Label>
-      <Input type="number" step="0.01" value={form.price_monthly ?? ""} onChange={e => setForm(f => ({ ...f, price_monthly: parseFloat(e.target.value) }))} />
-      <Label>Preço Anual (R$)</Label>
-      <Input type="number" step="0.01" value={form.price_yearly ?? ""} onChange={e => setForm(f => ({ ...f, price_yearly: parseFloat(e.target.value) }))} />
-      <Label>% Desconto Ano</Label>
-      <Input type="number" step="0.01" value={form.discount_percent_yearly ?? ""} onChange={e => setForm(f => ({ ...f, discount_percent_yearly: parseFloat(e.target.value) }))} />
-      <div className="flex justify-end space-x-2 mt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
-        <Button type="submit">Salvar</Button>
-      </div>
-    </form>
-  );
-}
-
-// Formulário de Gateway (simplificado)
-function GatewayForm({ initial, onCancel, onSave }:
-  { initial?: Partial<Gateway> | null, onCancel: () => void, onSave: (g: Partial<Gateway>) => void }
-) {
-  const [form, setForm] = useState<Partial<Gateway>>({
-    ...initial,
-    credentials: initial && typeof initial.credentials !== "undefined" ? initial.credentials : null,
-    is_active: initial?.is_active ?? true,
-  });
-  return (
-    <form onSubmit={e => { e.preventDefault(); onSave(form); }} className="space-y-2">
-      <Label>Nome</Label>
-      <Input value={form.name || ""} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required autoFocus />
-      <Label>Provider</Label>
-      <Input value={form.provider || ""} onChange={e => setForm(f => ({ ...f, provider: e.target.value }))} placeholder="stripe, asaas, mercadopago..." required />
-      <Label>Ativo?</Label>
-      <Input type="checkbox" checked={form.is_active ?? true} onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))} />
-      <div className="flex justify-end space-x-2 mt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
-        <Button type="submit">Salvar</Button>
-      </div>
-    </form>
   );
 }
