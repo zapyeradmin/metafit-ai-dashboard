@@ -443,6 +443,7 @@ export type Database = {
           gym_name: string | null
           height: number | null
           id: string
+          is_active: boolean
           updated_at: string
           user_id: string
         }
@@ -459,6 +460,7 @@ export type Database = {
           gym_name?: string | null
           height?: number | null
           id?: string
+          is_active?: boolean
           updated_at?: string
           user_id: string
         }
@@ -475,6 +477,7 @@ export type Database = {
           gym_name?: string | null
           height?: number | null
           id?: string
+          is_active?: boolean
           updated_at?: string
           user_id?: string
         }
