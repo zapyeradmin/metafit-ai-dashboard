@@ -14,7 +14,7 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
 
@@ -43,6 +43,7 @@ const Layout = ({ children }: LayoutProps) => {
       .slice(0, 2);
   };
 
+  // Menu principal
   const menuItems = [
     { icon: 'ri-dashboard-line', label: 'Dashboard', path: '/' },
     { icon: 'ri-calendar-line', label: 'Plano do Dia', path: '/plano-do-dia' },
@@ -53,6 +54,11 @@ const Layout = ({ children }: LayoutProps) => {
     { icon: 'ri-settings-3-line', label: 'Configuração', path: '/configuracoes' },
     { icon: 'ri-user-line', label: 'Meu Perfil', path: '/meu-perfil' }
   ];
+
+  // Apenas super admin vê o link
+  if (user?.email === "marciliobarros2010@gmail.com") {
+    menuItems.push({ icon: "ri-settings-3-line", label: "Administração", path: "/admin" });
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
