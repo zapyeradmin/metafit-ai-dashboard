@@ -119,8 +119,8 @@ function useAdminSaaS() {
       toast({ title: "Plano salvo!" });
       setPlans(prev => {
         if (plan.id) return prev.map(p => (p.id === plan.id ? { ...p, ...plan } as Plan : p));
-        // Defensive: check data is array and not null before accessing
-        if (Array.isArray(data) && data.length > 0) return prev.concat(data[0]);
+        // Defensive: check data is not null and is array and has items
+        if (data && Array.isArray(data) && data.length > 0) return prev.concat(data[0]);
         return prev;
       });
     }
@@ -146,7 +146,8 @@ function useAdminSaaS() {
       toast({ title: "Gateway salvo!" });
       setGateways(prev => {
         if (gw.id) return prev.map(g => (g.id === gw.id ? { ...g, ...gw } as Gateway : g));
-        if (Array.isArray(data) && data.length > 0) return prev.concat(data[0]);
+        // Defensive: check data is not null and is array and has items
+        if (data && Array.isArray(data) && data.length > 0) return prev.concat(data[0]);
         return prev;
       });
     }
