@@ -13,6 +13,8 @@ export type Plan = {
   discount_percent_yearly: number;
   resource_limits: Json | null;
   is_active: boolean;
+  max_users?: number;
+  features?: Json | null;
 };
 
 export function useAdminPlans() {
@@ -38,6 +40,8 @@ export function useAdminPlans() {
       discount_percent_yearly: plan.discount_percent_yearly ?? 0,
       resource_limits: plan.resource_limits ?? null,
       is_active: plan.is_active ?? true,
+      max_users: plan.max_users ?? 1,
+      features: plan.features ?? null,
       updated_at: new Date().toISOString(),
     };
     const { data, error } = await supabase

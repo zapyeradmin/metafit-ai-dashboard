@@ -9,6 +9,9 @@ export type User = {
   email: string;
   full_name?: string;
   is_active?: boolean;
+  phone?: string;
+  address?: string;
+  role?: string;
 };
 export type Plan = {
   id: string;
@@ -19,6 +22,8 @@ export type Plan = {
   discount_percent_yearly: number;
   resource_limits: Json | null;
   is_active: boolean;
+  max_users?: number;
+  features?: Json | null;
 };
 export type UserSubscription = {
   id: string;
@@ -42,19 +47,22 @@ export function useAdminUsers() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data: usersDb } = await supabase.from("profiles").select("user_id, full_name, is_active");
-      // Remove authRes, since listing users cannot use admin endpoint
+      const { data: usersDb } = await supabase.from("profiles").select(
+        "user_id, full_name, is_active, phone, address, role"
+      );
       let usersFinal: User[] = [];
       if (Array.isArray(usersDb)) {
         usersFinal = usersDb.map((p: any) => ({
           id: p.user_id,
-          email: "", // can't fetch email in this approach, unless stored in profiles
+          email: "", // para visualização no admin
           full_name: p.full_name || "",
           is_active: p.is_active ?? true,
+          phone: p.phone ?? "",
+          address: p.address ?? "",
+          role: p.role ?? "user",
         }));
       }
       setUsers(usersFinal);
-      // Subs
       const { data: subsDb } = await supabase
         .from("user_subscriptions")
         .select("*, plan:plan_id(*)");
@@ -64,7 +72,6 @@ export function useAdminUsers() {
   }, []);
 
   async function createUser(user: Partial<User> & { password: string }) {
-    // Call the edge function
     try {
       const response = await fetch("/functions/v1/admin-create-user", {
         method: "POST",
@@ -81,15 +88,19 @@ export function useAdminUsers() {
         return;
       }
       toast({ title: "Usuário criado!" });
-      // Refresh users from DB
-      const { data: usersDb } = await supabase.from("profiles").select("user_id, full_name, is_active");
+      const { data: usersDb } = await supabase.from("profiles").select(
+        "user_id, full_name, is_active, phone, address, role"
+      );
       let usersFinal: User[] = [];
       if (Array.isArray(usersDb)) {
         usersFinal = usersDb.map((p: any) => ({
           id: p.user_id,
-          email: "", // can't fetch email in this approach
+          email: "",
           full_name: p.full_name || "",
           is_active: p.is_active ?? true,
+          phone: p.phone ?? "",
+          address: p.address ?? "",
+          role: p.role ?? "user",
         }));
       }
       setUsers(usersFinal);
@@ -104,8 +115,16 @@ export function useAdminUsers() {
 
   async function updateUser(user: Partial<User>) {
     if (!user.id) return;
-    const updatePayload: { full_name?: string } = {};
+    const updatePayload: {
+      full_name?: string;
+      phone?: string;
+      address?: string;
+      role?: string;
+    } = {};
     if (user.full_name !== undefined) updatePayload.full_name = user.full_name;
+    if (user.phone !== undefined) updatePayload.phone = user.phone;
+    if (user.address !== undefined) updatePayload.address = user.address;
+    if (user.role !== undefined) updatePayload.role = user.role;
     const { error } = await supabase
       .from("profiles")
       .update(updatePayload)
@@ -137,4 +156,3 @@ export function useAdminUsers() {
 
   return { users, subscriptions, loading, createUser, updateUser, setUserActive, setUserPermission };
 }
-

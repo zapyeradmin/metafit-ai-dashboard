@@ -10,6 +10,8 @@ export type Gateway = {
   provider: string;
   is_active: boolean;
   credentials: Json | null;
+  webhook_url?: string;
+  supported_currencies?: string[];
 };
 
 export function useAdminGateways() {
@@ -32,6 +34,8 @@ export function useAdminGateways() {
       provider: gw.provider ?? "",
       is_active: gw.is_active ?? true,
       credentials: gw.credentials ?? null,
+      webhook_url: gw.webhook_url ?? "",
+      supported_currencies: gw.supported_currencies ?? [],
       updated_at: new Date().toISOString(),
     };
     const { data, error } = await supabase

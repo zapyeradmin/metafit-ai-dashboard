@@ -376,7 +376,9 @@ export type Database = {
           is_active: boolean
           name: string
           provider: string
+          supported_currencies: string[] | null
           updated_at: string
+          webhook_url: string | null
         }
         Insert: {
           created_at?: string
@@ -385,7 +387,9 @@ export type Database = {
           is_active?: boolean
           name: string
           provider: string
+          supported_currencies?: string[] | null
           updated_at?: string
+          webhook_url?: string | null
         }
         Update: {
           created_at?: string
@@ -394,7 +398,9 @@ export type Database = {
           is_active?: boolean
           name?: string
           provider?: string
+          supported_currencies?: string[] | null
           updated_at?: string
+          webhook_url?: string | null
         }
         Relationships: []
       }
@@ -403,8 +409,10 @@ export type Database = {
           created_at: string
           description: string | null
           discount_percent_yearly: number
+          features: Json | null
           id: string
           is_active: boolean
+          max_users: number | null
           name: string
           price_monthly: number
           price_yearly: number
@@ -415,8 +423,10 @@ export type Database = {
           created_at?: string
           description?: string | null
           discount_percent_yearly?: number
+          features?: Json | null
           id?: string
           is_active?: boolean
+          max_users?: number | null
           name: string
           price_monthly?: number
           price_yearly?: number
@@ -427,8 +437,10 @@ export type Database = {
           created_at?: string
           description?: string | null
           discount_percent_yearly?: number
+          features?: Json | null
           id?: string
           is_active?: boolean
+          max_users?: number | null
           name?: string
           price_monthly?: number
           price_yearly?: number
@@ -440,6 +452,7 @@ export type Database = {
       profiles: {
         Row: {
           activity_level: string | null
+          address: string | null
           avatar_url: string | null
           birth_date: string | null
           created_at: string
@@ -452,11 +465,14 @@ export type Database = {
           height: number | null
           id: string
           is_active: boolean
+          phone: string | null
+          role: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           activity_level?: string | null
+          address?: string | null
           avatar_url?: string | null
           birth_date?: string | null
           created_at?: string
@@ -469,11 +485,14 @@ export type Database = {
           height?: number | null
           id?: string
           is_active?: boolean
+          phone?: string | null
+          role?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           activity_level?: string | null
+          address?: string | null
           avatar_url?: string | null
           birth_date?: string | null
           created_at?: string
@@ -486,6 +505,8 @@ export type Database = {
           height?: number | null
           id?: string
           is_active?: boolean
+          phone?: string | null
+          role?: string | null
           updated_at?: string
           user_id?: string
         }

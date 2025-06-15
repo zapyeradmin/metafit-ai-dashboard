@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 type UserFormProps = {
   open: boolean,
   onOpenChange: (open: boolean) => void,
-  initial?: Partial<{ id: string, full_name: string, email: string, is_active: boolean }>,
-  onSave: (data: { id?: string, full_name: string, email: string, password?: string, is_active?: boolean }) => void
+  initial?: Partial<{ id: string, full_name: string, email: string, is_active: boolean, phone?: string, address?: string, role?: string }>,
+  onSave: (data: { id?: string, full_name: string, email: string, password?: string, is_active?: boolean, phone?: string, address?: string, role?: string }) => void
 };
 
 const UserForm: React.FC<UserFormProps> = ({ open, onOpenChange, initial, onSave }) => {
@@ -17,14 +17,25 @@ const UserForm: React.FC<UserFormProps> = ({ open, onOpenChange, initial, onSave
     full_name: initial?.full_name ?? "",
     email: initial?.email ?? "",
     is_active: initial?.is_active ?? true,
-    password: ""
+    password: "",
+    phone: initial?.phone ?? "",
+    address: initial?.address ?? "",
+    role: initial?.role ?? "user"
   });
 
   React.useEffect(() => {
     if (initial) {
-      setForm({ full_name: initial.full_name ?? "", email: initial.email ?? "", is_active: initial.is_active ?? true, password: "" });
+      setForm({
+        full_name: initial.full_name ?? "",
+        email: initial.email ?? "",
+        is_active: initial.is_active ?? true,
+        password: "",
+        phone: initial.phone ?? "",
+        address: initial.address ?? "",
+        role: initial.role ?? "user"
+      });
     } else {
-      setForm({ full_name: "", email: "", is_active: true, password: "" });
+      setForm({ full_name: "", email: "", is_active: true, password: "", phone: "", address: "", role: "user" });
     }
   }, [initial, open]);
 
@@ -44,6 +55,9 @@ const UserForm: React.FC<UserFormProps> = ({ open, onOpenChange, initial, onSave
               email: form.email,
               password: form.password.length > 3 ? form.password : undefined,
               is_active: form.is_active,
+              phone: form.phone,
+              address: form.address,
+              role: form.role,
             });
           }}
         >
@@ -61,6 +75,18 @@ const UserForm: React.FC<UserFormProps> = ({ open, onOpenChange, initial, onSave
               <Input type="password" value={form.password} minLength={4} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} required />
             </div>
           )}
+          <div>
+            <Label>Telefone</Label>
+            <Input type="text" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+          </div>
+          <div>
+            <Label>Endereço</Label>
+            <Input type="text" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
+          </div>
+          <div>
+            <Label>Papel</Label>
+            <Input type="text" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} />
+          </div>
           <div className="flex items-center space-x-2">
             <input type="checkbox" checked={form.is_active} onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))} id="active-box" />
             <Label htmlFor="active-box">Usuário Ativo</Label>
