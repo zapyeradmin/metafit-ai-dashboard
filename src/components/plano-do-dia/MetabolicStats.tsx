@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { useMetabolicCalculations } from '@/hooks/useMetabolicCalculations';
+import { useNutrition } from "@/hooks/useNutrition";
 
 const toDisplayNumber = (value: any, decimals = 0) => {
   const num = Number(value);
@@ -9,71 +9,50 @@ const toDisplayNumber = (value: any, decimals = 0) => {
 };
 
 const MetabolicStats = () => {
-  const { metabolicData } = useMetabolicCalculations();
+  const { meals } = useNutrition();
+  const { metabolicData, isLoading } = useMetabolicCalculations(meals);
 
-  // Garantir que todos os valores para contas sejam número ou '-' para display seguro.
-  const bmr = Number(metabolicData.bmr);
-  const tev = Number(metabolicData.tev);
-  const dailyWorkoutCalories = Number(metabolicData.dailyWorkoutCalories);
-  const totalCaloriesBurned = Number(metabolicData.totalCaloriesBurned);
-  const bmi = Number(metabolicData.bmi);
-  const idealWeight = Number(metabolicData.idealWeight);
-  const bodyFatPercentage = Number(metabolicData.bodyFatPercentage);
-  const leanBodyMass = Number(metabolicData.leanBodyMass);
+  if (isLoading) return <div>Carregando...</div>;
 
   const stats = [
     {
       label: 'Taxa Metabólica Basal',
-      value: isNaN(bmr) ? '-' : `${toDisplayNumber(bmr)} kcal`,
+      value: `${toDisplayNumber(metabolicData.tmb)} kcal`,
       icon: 'ri-heart-pulse-line',
       color: 'text-red-500 bg-red-50',
       description: 'Energia mínima para funções vitais'
     },
     {
       label: 'Valor Energético Total',
-      value: isNaN(tev) ? '-' : `${toDisplayNumber(tev)} kcal`,
+      value: `${toDisplayNumber(metabolicData.tev)} kcal`,
       icon: 'ri-flashlight-line',
       color: 'text-orange-500 bg-orange-50',
       description: 'Gasto energético total diário'
     },
     {
-      label: 'Gasto Calórico por Treino',
-      value: isNaN(dailyWorkoutCalories) ? '-' : `${toDisplayNumber(dailyWorkoutCalories)} kcal`,
-      icon: 'ri-fire-line',
-      color: 'text-yellow-500 bg-yellow-50',
-      description: 'Energia gasta durante exercícios'
-    },
-    {
-      label: 'Gasto Calórico Total',
-      value: isNaN(totalCaloriesBurned) ? '-' : `${toDisplayNumber(totalCaloriesBurned)} kcal`,
-      icon: 'ri-dashboard-line',
-      color: 'text-green-500 bg-green-50',
-      description: 'Total de energia gasta por dia'
-    },
-    {
       label: 'IMC',
-      value: isNaN(bmi) ? '-' : `${toDisplayNumber(bmi, 2)}`,
+      value: `${toDisplayNumber(metabolicData.bmi, 2)}`,
       icon: 'ri-scales-line',
       color: 'text-blue-500 bg-blue-50',
       description: 'Índice de Massa Corporal'
     },
     {
       label: 'Peso Ideal',
-      value: isNaN(idealWeight) ? '-' : `${toDisplayNumber(idealWeight, 1)} kg`,
+      value: `${toDisplayNumber(metabolicData.idealWeight, 1)} kg`,
       icon: 'ri-target-line',
       color: 'text-purple-500 bg-purple-50',
       description: 'Peso ideal para sua altura'
     },
     {
       label: '% Gordura Corporal',
-      value: isNaN(bodyFatPercentage) ? '-' : `${toDisplayNumber(bodyFatPercentage, 1)}%`,
+      value: `${toDisplayNumber(metabolicData.bodyFatPercentage, 1)}%`,
       icon: 'ri-pie-chart-line',
       color: 'text-pink-500 bg-pink-50',
       description: 'Percentual de gordura no corpo'
     },
     {
       label: 'Massa Magra',
-      value: isNaN(leanBodyMass) ? '-' : `${toDisplayNumber(leanBodyMass, 1)} kg`,
+      value: `${toDisplayNumber(metabolicData.leanBodyMass, 1)} kg`,
       icon: 'ri-muscle-line',
       color: 'text-indigo-500 bg-indigo-50',
       description: 'Peso sem gordura corporal'
@@ -83,7 +62,7 @@ const MetabolicStats = () => {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Dados Metabólicos Calculados</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {stats.map((stat, index) => (
           <div key={index} className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
             <div className="flex items-start">

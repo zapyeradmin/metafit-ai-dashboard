@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useNutrition } from '@/hooks/useNutrition';
@@ -12,6 +11,7 @@ import DailySummary from '@/components/plano-do-dia/DailySummary';
 import LoadingSpinner from '@/components/plano-do-dia/LoadingSpinner';
 import MetabolicStats from '@/components/plano-do-dia/MetabolicStats';
 import NutritionStats from '@/components/plano-do-dia/NutritionStats';
+import { useMetabolicCalculations } from '@/hooks/useMetabolicCalculations';
 
 const PlanoDoDia = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
