@@ -1,4 +1,3 @@
-
 import { useEffect, useCallback } from 'react';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useNutrition } from '@/hooks/useNutrition';
@@ -7,7 +6,12 @@ import { useToast } from '@/hooks/use-toast';
 import { usePlanoExercises } from './usePlanoExercises';
 import { usePlanoMeals } from './usePlanoMeals';
 
-export function usePlanoDoDiaController(selectedDate: string, generating = false, refreshKey = 0) {
+export function usePlanoDoDiaController(
+  selectedDate: string,
+  generating = false,
+  refreshKey = 0,
+  allowAutoCreate = false // NOVO parâmetro opcional, default false para segurança
+) {
   const { workouts, completeWorkout, completeExercise, refetch: refetchWorkouts } = useWorkouts();
   const { meals, completeMeal, refetch: refetchMeals } = useNutrition();
   const { toast } = useToast();
@@ -145,22 +149,24 @@ export function usePlanoDoDiaController(selectedDate: string, generating = false
   // Efeito para criar/buscar treino
   useEffect(() => {
     if (generating) return;
+    if (!allowAutoCreate) return; // <-- não cria nada se não pode
     if (thisDayWorkout) {
       fetchWorkoutExercises();
     } else {
       createDefaultWorkout();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, thisDayWorkout?.id, generating, refreshKey]);
+  }, [selectedDate, thisDayWorkout?.id, generating, refreshKey, allowAutoCreate]);
 
   // Efeito para criar/buscar refeições
   useEffect(() => {
     if (generating) return;
+    if (!allowAutoCreate) return; // <-- não cria nada se não pode
     if (thisDayMeals.length === 0) {
       createDefaultMeals();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, thisDayMeals.length, generating, refreshKey]);
+  }, [selectedDate, thisDayMeals.length, generating, refreshKey, allowAutoCreate]);
 
   // Novo: permite forçar refresh total após geração de plano
   const refetchAll = async () => {

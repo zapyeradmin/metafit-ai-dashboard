@@ -19,17 +19,20 @@ import { useToast } from "@/hooks/use-toast";
 
 const PlanoDoDia = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [refreshKey, setRefreshKey] = useState(0); // forçar re-render/controlador
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const { user } = useAuth();
   const { generate, loading: loadingGerarPlano } = useGenerateWorkoutPlan(user?.id);
   const { toast } = useToast();
 
-  // 1. Carregar perfil e preferências
+  // Carregar perfil e preferências
   const { profile, loading: loadingProfile } = useProfile();
   const { prefs, loading: loadingPrefs } = useUserWorkoutPreferences(user?.id);
 
-  // Adaptação: fornecemos uma flag 'generating' p/ controller evitar criar treinos/refeições default
+  // Nova flag: só permite criar treino/refeição auto se perfil e prefs existem
+  const allowAutoCreate = !!profile && !!prefs;
+
+  // Adaptação: fornecemos a flag allowAutoCreate
   const {
     workoutExercises,
     loading,
@@ -38,9 +41,9 @@ const PlanoDoDia = () => {
     handleCompleteExercise,
     handleCompleteMeal,
     refetchAll
-  } = usePlanoDoDiaController(selectedDate, loadingGerarPlano, refreshKey);
+  } = usePlanoDoDiaController(selectedDate, loadingGerarPlano, refreshKey, allowAutoCreate);
 
-  // 2. Função para checar perfil e preferências antes de gerar plano
+  // Função do botão: igual antes
   const handleGeneratePlan = async () => {
     if (loadingProfile || loadingPrefs) {
       toast({
