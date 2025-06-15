@@ -16,6 +16,7 @@ import NotificationsSection from '../components/dashboard/NotificationsSection';
 import UpcomingWorkoutsSection from '../components/dashboard/UpcomingWorkoutsSection';
 import NutritionTipsSection from '../components/dashboard/NutritionTipsSection';
 import { useMetabolicCalculations } from '../hooks/useMetabolicCalculations';
+import { useNotificationsRealtime } from "../hooks/useNotificationsRealtime";
 
 const Index = () => {
   const { profile, loading: profileLoading } = useProfile();
@@ -46,6 +47,9 @@ const Index = () => {
   };
 
   const nextWorkout = getNextWorkout();
+
+  // Use hook realtime após pegar o perfil:
+  useNotificationsRealtime(profile?.id);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
