@@ -3,8 +3,8 @@ import React from 'react';
 import { useDailyMacros } from "@/hooks/useDailyMacros";
 
 interface NutritionStatsProps {
-  meals: any[]; // não é mais usado mas permanece no prop para compat
   selectedDate?: string;
+  // Removido: meals: any[];
 }
 
 const toDisplayNumber = (value: any, decimals = 0) => {
@@ -15,7 +15,6 @@ const toDisplayNumber = (value: any, decimals = 0) => {
 };
 
 const NutritionStats = ({ selectedDate }: NutritionStatsProps) => {
-  // Por padrão usa a data de hoje caso não especificado
   const dateStr = selectedDate ?? new Date().toISOString().split('T')[0];
   const { data: dailyMacros, isLoading } = useDailyMacros(dateStr);
 

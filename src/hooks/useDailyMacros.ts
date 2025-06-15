@@ -15,7 +15,7 @@ type Macros = {
 export function useDailyMacros(date: string) {
   const { user } = useAuth();
 
-  return useQuery<Macros | null>({
+  return useQuery<Macros | null, Error>({
     queryKey: ["daily_macros", user?.id, date],
     queryFn: async () => {
       if (!user || !date) return null;
@@ -31,7 +31,7 @@ export function useDailyMacros(date: string) {
       return data as Macros | null;
     },
     enabled: !!user && !!date,
-    staleTime: 1000 * 60 * 5, // 5 minutos
-    cacheTime: 1000 * 60 * 15,
+    staleTime: 1000 * 60 * 5 // 5 minutos
+    // Remover cacheTime, pois não é mais suportado em React Query v5+
   });
 }
