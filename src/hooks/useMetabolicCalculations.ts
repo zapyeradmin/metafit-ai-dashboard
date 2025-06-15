@@ -1,190 +1,171 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
 
-import { useState, useEffect } from 'react';
-import { useProfile } from './useProfile';
-import { useBodyMeasurements } from './useBodyMeasurements';
-import { usePhysicalData } from './usePhysicalData';
-
-export interface MetabolicData {
-  bmr: number; // Taxa Metabólica Basal
-  tev: number; // Valor Energético Total
-  dailyWorkoutCalories: number; // Gasto Calórico Diário por Treino
-  totalCaloriesBurned: number; // Gasto Calórico Total
-  bodyFatPercentage: number; // Percentual de Gordura Corporal
-  leanBodyMass: number; // Massa Corporal Magra
-  idealWeight: number; // Peso Ideal
-  bmi: number; // Índice de Massa Corporal
-  waterIntakeRecommended: number; // Ingestão de Água Recomendada
-  proteinNeeds: number; // Necessidades de Proteína
-  carbNeeds: number; // Necessidades de Carboidratos
-  fatNeeds: number; // Necessidades de Gordura
+// Função auxiliar exemplo para ajuste
+function adjustTMBForHealthData(baseTMB: number, healthData: any) {
+  // Exemplo: Se usuário toma medicamento que afeta exercício, sugerir pequena redução de 5%
+  if (healthData?.medication_affects_exercise === "Sim") {
+    return baseTMB * 0.95;
+  }
+  // Exemplo: Se possui limitação física, pode reduzir atividade física recomendada
+  // (Aqui fica aberto para mais regras)
+  return baseTMB;
 }
 
-export const useMetabolicCalculations = () => {
-  const { profile } = useProfile();
-  const { measurements } = useBodyMeasurements();
-  const { physicalData } = usePhysicalData();
-  const [metabolicData, setMetabolicData] = useState<MetabolicData>({
-    bmr: 0,
-    tev: 0,
-    dailyWorkoutCalories: 0,
-    totalCaloriesBurned: 0,
-    bodyFatPercentage: 0,
-    leanBodyMass: 0,
-    idealWeight: 0,
-    bmi: 0,
-    waterIntakeRecommended: 0,
-    proteinNeeds: 0,
-    carbNeeds: 0,
-    fatNeeds: 0
-  });
+export function useMetabolicCalculations() {
+  const { user } = useAuth();
+  const [healthData, setHealthData] = useState<any>(null);
+
+  // Busca o health data mais recente desse usuário
+  useEffect(() => {
+    async function fetchLatestHealthData() {
+      if (!user) {
+        setHealthData(null);
+        return;
+      }
+      const { data } = await supabase
+        .from("user_health_data")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("data_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setHealthData(data);
+    }
+    fetchLatestHealthData();
+  }, [user]);
+
+  const { data: profile, isLoading: isProfileLoading } = useQuery(
+    ["profile"],
+    async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user?.id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching profile:", error);
+        throw error;
+      }
+
+      return data;
+    },
+    {
+      enabled: !!user,
+    }
+  );
+
+  const { data: latestMeasurement, isLoading: isMeasurementLoading } = useQuery(
+    ["latestMeasurement"],
+    async () => {
+      const { data, error } = await supabase
+        .from("body_measurements")
+        .select("*")
+        .eq("user_id", user?.id)
+        .order("date", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.error("Error fetching latest measurement:", error);
+        return null;
+      }
+
+      return data;
+    },
+    {
+      enabled: !!user,
+    }
+  );
+
+  const [age, setAge] = useState<number | null>(null);
 
   useEffect(() => {
-    if (profile) {
-      calculateMetabolicData();
-    }
-  }, [profile, measurements, physicalData]);
+    if (profile?.birth_date) {
+      const birthDate = new Date(profile.birth_date);
+      const today = new Date();
+      let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+      const month = today.getMonth() - birthDate.getMonth();
 
-  const calculateMetabolicData = () => {
-    if (!profile) return;
-
-    const latestMeasurement = measurements.length > 0 ? measurements[0] : null;
-    const weight = latestMeasurement?.weight || profile.current_weight || 70;
-    const height = profile.height || 170;
-    const birthDate = profile.birth_date ? new Date(profile.birth_date) : new Date('1990-01-01');
-    const age = new Date().getFullYear() - birthDate.getFullYear();
-    const gender = profile.gender || 'male';
-
-    // Cálculo da Taxa Metabólica Basal (BMR) usando fórmula de Mifflin-St Jeor (mais precisa)
-    let bmr: number;
-    if (gender === 'male') {
-      bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
-    } else {
-      bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
-    }
-
-    // Ajuste do BMR baseado no tipo de metabolismo
-    if (physicalData?.metabolism_type) {
-      switch (physicalData.metabolism_type) {
-        case 'lento':
-          bmr *= 0.9;
-          break;
-        case 'acelerado':
-          bmr *= 1.1;
-          break;
-        default:
-          break;
+      if (
+        month < 0 ||
+        (month === 0 && today.getDate() < birthDate.getDate())
+      ) {
+        calculatedAge--;
       }
+
+      setAge(calculatedAge);
+    }
+  }, [profile?.birth_date]);
+
+  // Cálculo exemplo ajustando TMB usando health data
+  function getTMB() {
+    const baseTMB =
+      profile?.gender === "male"
+        ? 88.362 + 13.397 * (latestMeasurement?.weight || 0) + 4.799 * (profile?.height || 0) - 5.677 * (age || 0)
+        : 447.593 + 9.247 * (latestMeasurement?.weight || 0) + 3.098 * (profile?.height || 0) - 4.330 * (age || 0);
+    return adjustTMBForHealthData(baseTMB, healthData);
+  }
+
+  function calculateBMI() {
+    if (!latestMeasurement?.weight || !profile?.height) return null;
+
+    const heightInMeters = profile.height / 100;
+    const bmi = latestMeasurement.weight / (heightInMeters * heightInMeters);
+    return parseFloat(bmi.toFixed(2));
+  }
+
+  function getRecommendedDailyCalories() {
+    const bmi = calculateBMI();
+    if (!bmi || !profile?.activity_level) return null;
+
+    let activityFactor;
+
+    switch (profile.activity_level) {
+      case "sedentary":
+        activityFactor = 1.2;
+        break;
+      case "lightly_active":
+        activityFactor = 1.375;
+        break;
+      case "moderately_active":
+        activityFactor = 1.55;
+        break;
+      case "very_active":
+        activityFactor = 1.725;
+        break;
+      case "extra_active":
+        activityFactor = 1.9;
+        break;
+      default:
+        activityFactor = 1.2;
     }
 
-    // Valor Energético Total (TEV) baseado no nível de atividade e dados específicos
-    const activityMultipliers = {
-      'sedentary': 1.2,
-      'light': 1.375,
-      'moderate': 1.55,
-      'active': 1.725,
-      'very_active': 1.9
-    };
+    const tmb = getTMB();
+    if (!tmb) return null;
 
-    let activityLevel = profile.activity_level || 'moderate';
-    let activityMultiplier = activityMultipliers[activityLevel as keyof typeof activityMultipliers] || 1.55;
+    let recommendedCalories = tmb * activityFactor;
 
-    // Ajuste baseado na frequência de treino real
-    if (physicalData?.training_frequency) {
-      if (physicalData.training_frequency >= 6) {
-        activityMultiplier = Math.max(activityMultiplier, 1.9);
-      } else if (physicalData.training_frequency >= 4) {
-        activityMultiplier = Math.max(activityMultiplier, 1.725);
-      } else if (physicalData.training_frequency >= 3) {
-        activityMultiplier = Math.max(activityMultiplier, 1.55);
-      }
+    if (profile.fitness_goal === "weight_loss") {
+      recommendedCalories -= 500;
+    } else if (profile.fitness_goal === "weight_gain") {
+      recommendedCalories += 500;
     }
 
-    const tev = bmr * activityMultiplier;
+    return parseFloat(recommendedCalories.toFixed(2));
+  }
 
-    // Gasto Calórico Diário por Treino baseado em dados reais
-    let dailyWorkoutCalories = weight * 8; // Base
-    
-    if (physicalData?.training_experience) {
-      switch (physicalData.training_experience) {
-        case 'iniciante':
-          dailyWorkoutCalories *= 0.8;
-          break;
-        case 'intermediario':
-          dailyWorkoutCalories *= 1.0;
-          break;
-        case 'avancado':
-          dailyWorkoutCalories *= 1.2;
-          break;
-        case 'expert':
-          dailyWorkoutCalories *= 1.4;
-          break;
-      }
-    }
-
-    // Cálculo do percentual de gordura corporal usando circunferências
-    let bodyFatPercentage = latestMeasurement?.body_fat_percentage || 0;
-    
-    if (!bodyFatPercentage && physicalData?.neck_circumference && latestMeasurement?.waist) {
-      // Fórmula da Marinha Americana para homens
-      if (gender === 'male') {
-        bodyFatPercentage = 495 / (1.0324 - 0.19077 * Math.log10(latestMeasurement.waist) + 0.15456 * Math.log10(physicalData.neck_circumference)) - 450;
-      } else {
-        // Para mulheres, inclui circunferência do quadril
-        const hips = latestMeasurement?.hips || 90;
-        bodyFatPercentage = 495 / (1.29579 - 0.35004 * Math.log10(latestMeasurement.waist) + 0.22100 * Math.log10(hips) - 0.35004 * Math.log10(physicalData.neck_circumference)) - 450;
-      }
-    }
-
-    // Massa Corporal Magra
-    const leanBodyMass = weight * (1 - bodyFatPercentage / 100);
-
-    // Peso Ideal usando fórmula de Robinson
-    let idealWeight: number;
-    if (gender === 'male') {
-      idealWeight = 52 + 1.9 * ((height / 2.54) - 60);
-    } else {
-      idealWeight = 49 + 1.7 * ((height / 2.54) - 60);
-    }
-
-    // IMC
-    const bmi = weight / Math.pow(height / 100, 2);
-
-    // Ingestão de Água Recomendada (ml)
-    let waterIntakeRecommended = weight * 35; // Base: 35ml por kg
-    if (physicalData?.training_frequency && physicalData.training_frequency > 3) {
-      waterIntakeRecommended += 500; // Adicional para treinos intensos
-    }
-
-    // Necessidades de Macronutrientes baseadas no objetivo e dados físicos
-    const proteinNeeds = leanBodyMass * 2.2; // 2.2g por kg de massa magra
-    
-    let carbMultiplier = 4; // Base para manutenção
-    if (profile.fitness_goal === 'lose_weight') {
-      carbMultiplier = 2;
-    } else if (profile.fitness_goal === 'gain_muscle') {
-      carbMultiplier = 6;
-    }
-    
-    const carbNeeds = weight * carbMultiplier;
-    const fatNeeds = weight * 0.8; // 0.8g por kg de peso corporal
-
-    const totalCaloriesBurned = tev;
-
-    setMetabolicData({
-      bmr: Math.round(bmr),
-      tev: Math.round(tev),
-      dailyWorkoutCalories: Math.round(dailyWorkoutCalories),
-      totalCaloriesBurned: Math.round(totalCaloriesBurned),
-      bodyFatPercentage: Math.round(bodyFatPercentage * 10) / 10,
-      leanBodyMass: Math.round(leanBodyMass * 10) / 10,
-      idealWeight: Math.round(idealWeight * 10) / 10,
-      bmi: Math.round(bmi * 10) / 10,
-      waterIntakeRecommended: Math.round(waterIntakeRecommended),
-      proteinNeeds: Math.round(proteinNeeds),
-      carbNeeds: Math.round(carbNeeds),
-      fatNeeds: Math.round(fatNeeds)
-    });
+  return {
+    getTMB,
+    calculateBMI,
+    getRecommendedDailyCalories,
+    profile,
+    latestMeasurement,
+    isProfileLoading,
+    isMeasurementLoading,
+    healthData,
   };
-
-  return { metabolicData };
-};
+}
