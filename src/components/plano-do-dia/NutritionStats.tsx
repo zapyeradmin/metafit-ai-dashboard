@@ -14,7 +14,10 @@ const NutritionStats = ({ meals }: NutritionStatsProps) => {
   const totalCarbs = meals.reduce((sum, meal) => sum + (meal.carbs || 0), 0);
   const totalFat = meals.reduce((sum, meal) => sum + (meal.fat || 0), 0);
   const caloriesConsumed = meals.reduce((sum, meal) => sum + (meal.calories || 0), 0);
-  const caloriesNeeded = metabolicData.tev;
+  
+  // Garantir que caloriesNeeded é sempre number e não NaN
+  let caloriesNeeded: number = Number(metabolicData.tev);
+  if (isNaN(caloriesNeeded)) caloriesNeeded = 0;
 
   const stats = [
     {
@@ -37,7 +40,7 @@ const NutritionStats = ({ meals }: NutritionStatsProps) => {
     },
     {
       label: 'Calorias Necessárias',
-      value: `${caloriesNeeded} kcal`,
+      value: metabolicData.tev !== "-" ? `${metabolicData.tev} kcal` : "-",
       icon: 'ri-target-line',
       color: 'text-purple-500 bg-purple-50'
     },
@@ -51,7 +54,9 @@ const NutritionStats = ({ meals }: NutritionStatsProps) => {
       label: 'Diferença',
       value: `${caloriesConsumed - caloriesNeeded} kcal`,
       icon: 'ri-scales-line',
-      color: caloriesConsumed >= caloriesNeeded ? 'text-red-500 bg-red-50' : 'text-green-500 bg-green-50'
+      color: caloriesConsumed >= caloriesNeeded 
+        ? 'text-red-500 bg-red-50' 
+        : 'text-green-500 bg-green-50'
     }
   ];
 
@@ -75,3 +80,4 @@ const NutritionStats = ({ meals }: NutritionStatsProps) => {
 };
 
 export default NutritionStats;
+
