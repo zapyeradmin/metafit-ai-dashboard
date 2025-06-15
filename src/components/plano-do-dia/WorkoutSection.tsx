@@ -28,19 +28,18 @@ interface WorkoutSectionProps {
   onCompleteExercise: (exerciseId: string) => void;
 }
 
-// Organização e agrupamento correto dos exercícios
+// Função para agrupar exercícios por grupo muscular (exceto aeróbico/alongamento)
 function groupExercises(workoutExercises: WorkoutExercise[]) {
   const groupMap: { [key: string]: WorkoutExercise[] } = {};
-  const outros: WorkoutExercise[] = [];
   const funcional: WorkoutExercise[] = [];
 
   workoutExercises.forEach((ex) => {
-    // Aeróbico/alongamento
+    // Detecta aeróbico/alongamento (sem nome de exercício mas com notes)
     if (!ex.exercise?.name && ex.notes) {
       funcional.push(ex);
       return;
     }
-    // Se tem muscle_group
+    // Se tem nome/músculo, agrupa
     const muscle = ex.exercise?.muscle_group ?? 'Outro';
     if (!groupMap[muscle]) groupMap[muscle] = [];
     groupMap[muscle].push(ex);
@@ -64,7 +63,7 @@ const WorkoutSection = ({
     });
   };
 
-  // Agrupar exercícios do dia que não sejam aeróbico/alongamento
+  // Agrupar exercícios do dia (musculação de um lado, funcional do outro)
   const { groupMap, funcional } = groupExercises(workoutExercises);
 
   return (
@@ -85,10 +84,10 @@ const WorkoutSection = ({
         </div>
       )}
 
-      {/* Lista de grupos musculares e seus exercícios */}
+      {/* Lista de grupos musculares e exercícios */}
       <div className="space-y-5">
         {Object.entries(groupMap).map(([mg, exList]) =>
-          exList.length ? (
+          exList.length > 0 ? (
             <div key={mg}>
               <div className="font-semibold mb-2 text-blue-700">{mg}</div>
               <div className="space-y-2">
@@ -105,15 +104,19 @@ const WorkoutSection = ({
                     />
                     <div className="ml-4 flex-1">
                       <h5 className="text-sm font-medium text-gray-900">
-                        {exercise.exercise?.name || 'Exercício'}
+                        {exercise.exercise?.name || "Exercício"}
                       </h5>
                       <p className="text-xs text-gray-600">
-                        {exercise.sets} séries × {exercise.reps} reps
-                        {typeof exercise.weight === 'number' ? ` • ${exercise.weight}kg` : ''}
+                        {exercise.sets ? `${exercise.sets} séries` : ""}
+                        {typeof exercise.reps === "number" ? ` × ${exercise.reps} reps` : ""}
+                        {/* Exibe o peso só se existir e for maior que zero */}
+                        {typeof exercise.weight === "number" && exercise.weight > 0
+                          ? ` • ${exercise.weight}kg`
+                          : ""}
                       </p>
                     </div>
                     {exercise.is_completed && (
-                      <div className="text-green-500">
+                      <div className="text-green-500 ml-2">
                         <i className="ri-check-line w-5 h-5"></i>
                       </div>
                     )}
@@ -143,7 +146,7 @@ const WorkoutSection = ({
                     </h5>
                   </div>
                   {exercise.is_completed && (
-                    <div className="text-green-500">
+                    <div className="text-green-500 ml-2">
                       <i className="ri-check-line w-5 h-5"></i>
                     </div>
                   )}
@@ -171,3 +174,4 @@ const WorkoutSection = ({
 };
 
 export default WorkoutSection;
+
