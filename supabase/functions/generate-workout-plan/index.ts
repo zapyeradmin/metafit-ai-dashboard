@@ -39,16 +39,54 @@ serve(async (req) => {
 
     // 2. Prompt IA
     const userGoal = profile.fitness_goal || "manutenção";
+    // NOVO PROMPT detalhado conforme usuário pediu
     const prompt = `
-    Crie um programa de treino personalizado para:
-    - Objetivo: ${userGoal}
-    - Nível: ${prefs.experience_level}
-    - Dias semana: ${prefs.training_days_per_week}
-    - Tempo/sessão: ${prefs.time_per_session}min
-    - Equipamentos: ${prefs.available_equipment?.join(", ") || "nenhum"}
-    - Lesões: ${prefs.injury_considerations?.join(", ") || "nenhuma"}
-    - Áreas de foco: ${prefs.focus_areas?.join(", ") || "equilibrado"}
-    Duração: 8 semanas. Estruture em JSON, separando treinos por semana e exercícios detalhados.
+    Gere um programa de treino semanal dividido entre Segunda e Sábado, com base nas regras abaixo. Estruture a resposta em JSON, separando treinos por semana e detalhando cada dia:
+
+    - Cada dia deve treinar 2 a 3 regiões musculares principais, por exemplo: "Costas e Bíceps", "Peito e Tríceps", "Pernas (Quadríceps, Glúteos, Panturrilha)", "Ombros e Abdômen", "Posterior de Pernas, Glúteos e Panturrilha".
+    - Segunda a Sábado são dias de treino, Domingo é descanso ou alongamento leve.
+    - Para músculos grandes (costas, peito, pernas): 5 exercícios no dia.
+    - Para músculos menores (bíceps, tríceps, abdômen, ombro, panturrilha): 3 a 4 exercícios no dia.
+    - Sempre inclua pelo menos um exercício de alongamento e um de aeróbico por dia, escolhendo entre: "Esteira", "Bicicleta", "Elíptico", "Simulador de escada" e "Caminhada livre".
+    - Informe séries e repetições de cada exercício (exemplo: 4x12 para grandes, 3x15 para menores, ajuste conforme objetivo).
+    - Não repita músculos grandes em dias seguidos.
+    - Exemplos de divisões sugeridas:
+      - Segunda: Costas e Bíceps
+      - Terça: Peito e Tríceps
+      - Quarta: Pernas (Quadríceps, Glúteos, Panturrilha)
+      - Quinta: Ombros e Abdômen
+      - Sexta: Posterior de Pernas, Glúteos e Panturrilha
+      - Sábado: Cardio, Abdômen & Alongamento geral
+    - Use as preferências do usuário abaixo:
+      - Objetivo: ${userGoal}
+      - Nível: ${prefs.experience_level}
+      - Dias de treino/semana: ${prefs.training_days_per_week}
+      - Tempo por sessão: ${prefs.time_per_session}min
+      - Equipamentos disponíveis: ${prefs.available_equipment?.join(", ") || "nenhum"}
+      - Lesões: ${prefs.injury_considerations?.join(", ") || "nenhuma"}
+      - Áreas de foco: ${prefs.focus_areas?.join(", ") || "equilibrado"}.
+
+    Responda APENAS com o JSON estruturado (sem texto antes ou depois), usando o seguinte modelo:
+    {
+      "semanas": [
+        {
+          "dias": [
+            {
+              "data": "YYYY-MM-DD",
+              "nome": "Costas e Bíceps",
+              "grupos_musculares": ["costas", "bíceps"],
+              "exercicios": [
+                { "nome": "Puxada alta", "series": 4, "repeticoes": 12 },
+                { "nome": "Rosca direta", "series": 3, "repeticoes": 10 },
+                { "nome": "..." }
+              ],
+              "aerobico": "Esteira 15min",
+              "alongamento": "Alongamento geral 10min"
+            }
+          ]
+        }
+      ]
+    }
     `;
 
     // 3. Chamar OpenAI
