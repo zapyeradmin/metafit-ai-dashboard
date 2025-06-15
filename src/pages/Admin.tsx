@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -29,7 +28,7 @@ export default function AdminPage() {
     }
   }, [user, isSuperAdmin, navigate, toast]);
 
-  const { plans, gateways, users, subscriptions, savePlan, saveGateway } = useAdminSaaS();
+  const { plans, gateways, users, subscriptions, savePlan, saveGateway, deletePlan, deleteGateway } = useAdminSaaS();
   const [planModalOpen, setPlanModalOpen] = React.useState(false);
   const [editingPlan, setEditingPlan] = React.useState(null);
   const [gwModalOpen, setGwModalOpen] = React.useState(false);
@@ -45,11 +44,13 @@ export default function AdminPage() {
           plans={plans}
           onEdit={plan => { setEditingPlan(plan); setPlanModalOpen(true); }}
           onCreate={() => { setEditingPlan(null); setPlanModalOpen(true); }}
+          onDelete={(planId) => deletePlan(planId)}
         />
         <GatewaysCard
           gateways={gateways}
           onEdit={gw => { setEditingGw(gw); setGwModalOpen(true); }}
           onCreate={() => { setEditingGw(null); setGwModalOpen(true); }}
+          onDelete={(gatewayId) => deleteGateway(gatewayId)}
         />
         <UsuariosCard users={users} subscriptions={subscriptions} />
       </div>

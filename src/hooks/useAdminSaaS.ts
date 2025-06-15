@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -142,5 +141,27 @@ export function useAdminSaaS() {
     }
   }
 
-  return { plans, gateways, users, subscriptions, loading, savePlan, saveGateway };
+  // Remover plano
+  async function deletePlan(planId: string) {
+    const { error } = await supabase.from('plans').delete().eq('id', planId);
+    if (error) {
+      toast({ title: "Erro ao excluir plano", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Plano excluído!" });
+      setPlans(prev => prev.filter(p => p.id !== planId));
+    }
+  }
+
+  // Remover gateway
+  async function deleteGateway(gatewayId: string) {
+    const { error } = await supabase.from('payment_gateways').delete().eq('id', gatewayId);
+    if (error) {
+      toast({ title: "Erro ao excluir gateway", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Gateway excluído!" });
+      setGateways(prev => prev.filter(g => g.id !== gatewayId));
+    }
+  }
+
+  return { plans, gateways, users, subscriptions, loading, savePlan, saveGateway, deletePlan, deleteGateway };
 }
