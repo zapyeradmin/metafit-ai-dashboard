@@ -1,15 +1,18 @@
 
+// Refeito como formulário controlado
 import React, { useState } from "react";
-import { useUserWorkoutPreferences } from "@/hooks/useUserWorkoutPreferences";
+import { UserWorkoutPrefs } from "@/hooks/useUserWorkoutPreferences";
 
 interface Props {
-  userId: string;
+  onSave: (data: Omit<UserWorkoutPrefs, "id" | "created_at" | "updated_at">) => Promise<boolean>;
+  onCancel: () => void;
+  loading: boolean;
 }
 
 const levels = [
   { value: "beginner", label: "Iniciante" },
   { value: "intermediate", label: "Intermediário" },
-  { value: "advanced", label: "Avançado" },
+  { value: "advanced", label: "Avançado" }
 ];
 
 const equipamentos = [
@@ -18,20 +21,32 @@ const equipamentos = [
 
 const focusList = ["Peito", "Costas", "Pernas", "Ombros", "Bíceps", "Tríceps", "Core"];
 
-const WorkoutPreferencesForm: React.FC<Props> = ({ userId }) => {
-  const { prefs, setPrefs, loading } = useUserWorkoutPreferences(userId);
-  const [form, setForm] = useState<any>(prefs || { experience_level: '', available_equipment: [], training_days_per_week: 3, time_per_session: 60, injury_considerations: [], focus_areas: [] });
-
-  React.useEffect(() => { if (prefs) setForm(prefs); }, [prefs]);
+const WorkoutPreferencesForm: React.FC<Props> = ({ onSave, onCancel, loading }) => {
+  const [form, setForm] = useState<any>({
+    experience_level: '',
+    available_equipment: [],
+    training_days_per_week: 3,
+    time_per_session: 60,
+    injury_considerations: [],
+    focus_areas: []
+  });
+  const [saving, setSaving] = useState(false);
 
   const handleChange = (field: string, value: any) => {
     setForm((f: any) => ({ ...f, [field]: value }));
   };
 
-  if (loading) return <div>Carregando...</div>;
-
   return (
-    <form className="space-y-4" onSubmit={e => { e.preventDefault(); setPrefs(form); }}>
+    <form
+      className="space-y-4"
+      onSubmit={async e => {
+        e.preventDefault();
+        setSaving(true);
+        const ok = await onSave(form);
+        setSaving(false);
+        if (ok) onCancel();
+      }}
+    >
       <div>
         <label>Nível:</label>
         <select className="w-full mt-1" value={form.experience_level} onChange={e => handleChange("experience_level", e.target.value)}>
@@ -63,7 +78,14 @@ const WorkoutPreferencesForm: React.FC<Props> = ({ userId }) => {
       </div>
       <div>
         <label>Lesões ou restrições:</label>
-        <input type="text" className="w-full mt-1" value={form.injury_considerations?.join(", ")} onChange={e => handleChange("injury_considerations", e.target.value.split(",").map((s: string) => s.trim()))} />
+        <input
+          type="text"
+          className="w-full mt-1"
+          value={form.injury_considerations?.join(", ")}
+          onChange={e =>
+            handleChange("injury_considerations", e.target.value.split(",").map((s: string) => s.trim()))
+          }
+        />
       </div>
       <div>
         <label>Áreas de foco:</label>
@@ -79,7 +101,12 @@ const WorkoutPreferencesForm: React.FC<Props> = ({ userId }) => {
           ))}
         </div>
       </div>
-      <button className="bg-primary text-white rounded px-4 py-2">Salvar Preferências</button>
+      <div className="flex gap-2 mt-4">
+        <button type="submit" className="bg-primary text-white rounded px-4 py-2" disabled={saving || loading}>
+          {saving ? "Salvando..." : "Salvar Preferências"}
+        </button>
+        <button type="button" onClick={onCancel} className="rounded px-4 py-2 border">Cancelar</button>
+      </div>
     </form>
   );
 };

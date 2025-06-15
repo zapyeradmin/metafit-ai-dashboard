@@ -15,10 +15,13 @@ import { useGenerateWorkoutPlan } from "@/hooks/useGenerateWorkoutPlan";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserWorkoutPreferences } from "@/hooks/useUserWorkoutPreferences";
 import { useToast } from "@/hooks/use-toast";
+import WorkoutPreferencesHistoryTable from "@/components/workouts/WorkoutPreferencesHistoryTable";
 
 const PlanoDoDia = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const [formVisible, setFormVisible] = useState(false);
 
   const { user } = useAuth();
   const { generate, loading: loadingGerarPlano } = useGenerateWorkoutPlan(user?.id);
@@ -139,8 +142,25 @@ const PlanoDoDia = () => {
 
         {user && (
           <div className="mb-8">
-            <h2 className="text-lg font-bold mb-2">Preferências de Treino</h2>
-            <WorkoutPreferencesForm userId={user.id} />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+              <h2 className="text-lg font-bold">Preferências de Treino</h2>
+              {!formVisible && (
+                <button
+                  className="bg-blue-600 text-white rounded px-4 py-2"
+                  onClick={() => setFormVisible(true)}
+                >
+                  Criar Nova Preferência
+                </button>
+              )}
+            </div>
+            {formVisible && (
+              <WorkoutPreferencesForm
+                onSave={addPreference}
+                onCancel={() => setFormVisible(false)}
+                loading={loadingPrefs}
+              />
+            )}
+            <WorkoutPreferencesHistoryTable history={history} loading={loadingPrefs} />
           </div>
         )}
 

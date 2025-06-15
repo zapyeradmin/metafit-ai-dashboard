@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+// O tipo agora é para histórico
 export type UserWorkoutPrefs = {
   id?: string;
   user_id: string;
@@ -19,10 +20,11 @@ export type UserWorkoutPrefs = {
 };
 
 export function useUserWorkoutPreferences(userId: string | undefined) {
-  const [prefs, setPrefs] = useState<UserWorkoutPrefs | null>(null);
+  const [history, setHistory] = useState<UserWorkoutPrefs[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Busca histórico
   useEffect(() => {
     if (!userId) return;
     setLoading(true);
@@ -30,39 +32,27 @@ export function useUserWorkoutPreferences(userId: string | undefined) {
       .from("user_workout_preferences")
       .select("*")
       .eq("user_id", userId)
-      .maybeSingle()
+      .order("created_at", { ascending: false })
       .then(({ data, error }) => {
         if (error) {
-          toast({ title: "Erro ao carregar preferências", variant: "destructive" });
+          toast({ title: "Erro ao carregar histórico", variant: "destructive" });
         }
-        setPrefs(data);
+        setHistory(data || []);
         setLoading(false);
       });
   }, [userId]);
 
-  const upsertPrefs = async (newPrefs: Partial<UserWorkoutPrefs>) => {
+  // "Nova" preferência: sempre salva uma linha nova (deixa histórico)
+  const addPreference = async (newPrefs: Omit<UserWorkoutPrefs, "id" | "created_at" | "updated_at">) => {
     if (!userId) return;
-    // Build a guaranteed-complete object for upsert
-    const base: UserWorkoutPrefs = prefs
-      ? { ...prefs }
-      : {
-          user_id: userId,
-          experience_level: "",
-          available_equipment: [],
-          training_days_per_week: 1,
-          time_per_session: 20,
-          injury_considerations: [],
-          focus_areas: []
-        };
 
     const updates: UserWorkoutPrefs = {
-      ...base,
       ...newPrefs,
       user_id: userId,
       updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
 
-    // Ensure every required field is present!
     if (
       !updates.experience_level ||
       !Array.isArray(updates.available_equipment) ||
@@ -75,22 +65,28 @@ export function useUserWorkoutPreferences(userId: string | undefined) {
         title: "Por favor preencha todos os campos obrigatórios",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("user_workout_preferences")
-      .upsert(updates)
-      .select()
-      .maybeSingle();
+      .insert(updates);
 
     if (error) {
       toast({ title: "Erro ao salvar preferências", variant: "destructive" });
+      return false;
     } else {
-      setPrefs(data);
-      toast({ title: "Preferências salvas!" });
+      toast({ title: "Preferências salvas no histórico!" });
+      // Força reload
+      supabase
+        .from("user_workout_preferences")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .then(({ data }) => setHistory(data || []));
+      return true;
     }
   };
 
-  return { prefs, setPrefs: upsertPrefs, loading };
+  return { history, addPreference, loading };
 }
