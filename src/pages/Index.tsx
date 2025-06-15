@@ -28,6 +28,9 @@ const Index = () => {
   const todayWorkout = getTodayWorkout();
   const todayMeals = getTodayMeals();
 
+  // Chame ANTES de qualquer return condicional
+  const { metabolicData } = useMetabolicCalculations(todayMeals);
+
   const isLoading = profileLoading || measurementsLoading || workoutsLoading || nutritionLoading || statsLoading;
 
   if (isLoading) {
@@ -44,9 +47,6 @@ const Index = () => {
 
   const nextWorkout = getNextWorkout();
 
-  // Importante: garantir recálculo padronizado para o Dashboard
-  const { metabolicData } = useMetabolicCalculations(todayMeals);
-  
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
@@ -57,7 +57,6 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <ProgressCard profile={profile} latestMeasurement={latestMeasurement} />
           <NextWorkoutCard nextWorkout={nextWorkout} profile={profile} />
-          {/* Passar dados corretos ao NutritionCard conforme necessário */}
           <NutritionCard todayMeals={todayMeals} />
           <MetricsCard latestMeasurement={latestMeasurement} profile={profile} />
         </div>
