@@ -44,7 +44,10 @@ export function useUserWorkoutPreferences(userId: string | undefined) {
 
   // "Nova" preferência: sempre salva uma linha nova (deixa histórico)
   const addPreference = async (newPrefs: Omit<UserWorkoutPrefs, "id" | "created_at" | "updated_at">) => {
-    if (!userId) return;
+    if (!userId) {
+      toast({ title: "Usuário não encontrado", variant: "destructive" });
+      return false;
+    }
 
     const updates: UserWorkoutPrefs = {
       ...newPrefs,

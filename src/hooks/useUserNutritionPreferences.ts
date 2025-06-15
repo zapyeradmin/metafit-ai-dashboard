@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +32,10 @@ export function useUserNutritionPreferences(userId: string | undefined) {
   const addPreference = async (
     newPrefs: Omit<UserNutritionPrefs, "id" | "created_at" | "updated_at">
   ) => {
-    if (!userId) return false;
+    if (!userId) {
+      toast({ title: "Usuário não encontrado", variant: "destructive" });
+      return false;
+    }
 
     const updates: Omit<UserNutritionPrefs, "id"> = {
       ...newPrefs,

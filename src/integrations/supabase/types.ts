@@ -120,7 +120,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_ai_user_contexts_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       body_measurements: {
         Row: {
@@ -624,7 +632,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_nutrition_preferences_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_physical_data: {
         Row: {
@@ -1084,6 +1100,7 @@ export type Database = {
           structure: Json
           template_name: string
           training_days_per_week: number | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1094,6 +1111,7 @@ export type Database = {
           structure: Json
           template_name: string
           training_days_per_week?: number | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1104,8 +1122,17 @@ export type Database = {
           structure?: Json
           template_name?: string
           training_days_per_week?: number | null
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_workout_templates_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
     }
     Views: {
