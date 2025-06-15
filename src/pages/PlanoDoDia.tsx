@@ -134,21 +134,7 @@ const PlanoDoDia = () => {
             <h1 className="text-2xl font-bold text-gray-900">Plano do Dia</h1>
             <p className="mt-1 text-sm text-gray-600">Organize seu treino e alimentação de hoje.</p>
           </div>
-          {user && (
-            <Button
-              onClick={handleGeneratePlan}
-              disabled={
-                loadingGerarPlano ||
-                loadingProfile ||
-                loadingPrefs ||
-                !profile ||
-                !prefs
-              }
-              className="w-fit"
-            >
-              {loadingGerarPlano ? "Gerando plano..." : "Gerar Plano Automático (sobrescreve o existente)"}
-            </Button>
-          )}
+          
         </div>
 
         {user && (
