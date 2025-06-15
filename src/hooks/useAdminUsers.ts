@@ -43,24 +43,15 @@ export function useAdminUsers() {
     (async () => {
       setLoading(true);
       const { data: usersDb } = await supabase.from("profiles").select("user_id, full_name, is_active");
-      const authRes = await supabase.auth.admin.listUsers();
+      // Remove authRes, since listing users cannot use admin endpoint
       let usersFinal: User[] = [];
-      if (
-        Array.isArray(usersDb) &&
-        authRes &&
-        authRes.data &&
-        Array.isArray(authRes.data.users)
-      ) {
-        usersFinal = usersDb.map((p: any) => {
-          const authUser =
-            authRes.data.users.find((u: any) => u.id === p.user_id);
-          return {
-            id: p.user_id,
-            email: authUser?.email ?? "",
-            full_name: p.full_name || "",
-            is_active: p.is_active ?? true,
-          };
-        });
+      if (Array.isArray(usersDb)) {
+        usersFinal = usersDb.map((p: any) => ({
+          id: p.user_id,
+          email: "", // can't fetch email in this approach, unless stored in profiles
+          full_name: p.full_name || "",
+          is_active: p.is_active ?? true,
+        }));
       }
       setUsers(usersFinal);
       // Subs
@@ -73,31 +64,41 @@ export function useAdminUsers() {
   }, []);
 
   async function createUser(user: Partial<User> & { password: string }) {
-    const { data: userRes, error: errCreate } = await supabase.auth.admin.createUser({
-      email: user.email!,
-      password: user.password!,
-      email_confirm: true,
-    });
-    if (errCreate || !userRes || !userRes.user) {
-      toast({ title: "Erro ao criar usuário", description: errCreate?.message || "Erro", variant: "destructive" });
-      return;
-    }
-    // Sempre insere is_active: true no perfil
-    const { error: errProfile } = await supabase.from("profiles").insert([{
-      user_id: userRes.user.id,
-      full_name: user.full_name,
-      is_active: true,
-    }]);
-    if (errProfile) {
-      toast({ title: "Usuário criado, mas perfil não foi salvo", description: errProfile.message, variant: "destructive" });
-    } else {
+    // Call the edge function
+    try {
+      const response = await fetch("/functions/v1/admin-create-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user),
+      });
+      const result = await response.json();
+      if (!response.ok || result.error) {
+        toast({
+          title: "Erro ao criar usuário",
+          description: result.error || "Erro desconhecido",
+          variant: "destructive",
+        });
+        return;
+      }
       toast({ title: "Usuário criado!" });
-      setUsers(prev => prev.concat({
-        id: userRes.user.id,
-        email: user.email ?? "",
-        full_name: user.full_name,
-        is_active: true,
-      }));
+      // Refresh users from DB
+      const { data: usersDb } = await supabase.from("profiles").select("user_id, full_name, is_active");
+      let usersFinal: User[] = [];
+      if (Array.isArray(usersDb)) {
+        usersFinal = usersDb.map((p: any) => ({
+          id: p.user_id,
+          email: "", // can't fetch email in this approach
+          full_name: p.full_name || "",
+          is_active: p.is_active ?? true,
+        }));
+      }
+      setUsers(usersFinal);
+    } catch (e: any) {
+      toast({
+        title: "Erro ao criar usuário",
+        description: e?.message || "Erro desconhecido",
+        variant: "destructive",
+      });
     }
   }
 
@@ -136,3 +137,4 @@ export function useAdminUsers() {
 
   return { users, subscriptions, loading, createUser, updateUser, setUserActive, setUserPermission };
 }
+
