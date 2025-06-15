@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +15,7 @@ import AssistenteIA from "./pages/AssistenteIA";
 import Configuracoes from "./pages/Configuracoes";
 import MeuPerfil from "./pages/MeuPerfil";
 import NotFound from "./pages/NotFound";
+import AdminSaaSPage from "./pages/AdminSaaS";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +48,7 @@ const AppContent = () => {
         <Route path="/assistente-ia" element={<Layout><AssistenteIA /></Layout>} />
         <Route path="/configuracoes" element={<Layout><Configuracoes /></Layout>} />
         <Route path="/meu-perfil" element={<Layout><MeuPerfil /></Layout>} />
+        <Route path="/admin/saas" element={<Layout><AdminSaaSPage /></Layout>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
