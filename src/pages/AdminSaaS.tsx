@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -68,13 +67,22 @@ function useAdminSaaS() {
       // Usuários (busca perfis)
       const { data: usersDb } = await supabase.from("profiles").select("user_id, full_name");
       // Busca emails na auth.users (amostra, sem limit param)
-      const authDb = await supabase.auth.admin.listUsers();
+      const authRes = await supabase.auth.admin.listUsers();
       let usersFinal: User[] = [];
-      // Defensiva: usersDb e authDb?.users devem ser arrays
-      if (Array.isArray(usersDb) && Array.isArray(authDb?.users)) {
+      if (
+        Array.isArray(usersDb) &&
+        authRes &&
+        authRes.data &&
+        Array.isArray(authRes.data.users)
+      ) {
         usersFinal = usersDb.map((p: any) => {
-          const authUser = authDb.users.find((u: any) => u.id === p.user_id);
-          return { id: p.user_id, email: authUser?.email ?? "", full_name: p.full_name || "" };
+          const authUser =
+            authRes.data.users.find((u: any) => u.id === p.user_id);
+          return {
+            id: p.user_id,
+            email: authUser?.email ?? "",
+            full_name: p.full_name || "",
+          };
         });
       }
       setUsers(usersFinal);
