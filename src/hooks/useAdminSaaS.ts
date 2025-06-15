@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { Json } from "@/integrations/supabase/types";
 
-// Export all relevant types
 export type Plan = {
   id: string;
   name: string;
@@ -25,6 +24,7 @@ export type User = {
   id: string;
   email: string;
   full_name?: string;
+  is_active?: boolean;
 };
 export type UserSubscription = {
   id: string;
@@ -57,8 +57,7 @@ export function useAdminSaaS() {
       const { data: gatewaysDb } = await supabase.from("payment_gateways").select("*");
       setGateways(gatewaysDb || []);
       // Usuários (busca perfis)
-      const { data: usersDb } = await supabase.from("profiles").select("user_id, full_name");
-      // Busca emails na auth.users (amostra, sem limit param)
+      const { data: usersDb } = await supabase.from("profiles").select("user_id, full_name, is_active");
       const authRes = await supabase.auth.admin.listUsers();
       let usersFinal: User[] = [];
       if (
@@ -74,6 +73,7 @@ export function useAdminSaaS() {
             id: p.user_id,
             email: authUser?.email ?? "",
             full_name: p.full_name || "",
+            is_active: p.is_active ?? true,
           };
         });
       }
@@ -116,7 +116,6 @@ export function useAdminSaaS() {
     }
   }
 
-  // Salva/atualiza gateway
   async function saveGateway(gw: Partial<Gateway>) {
     const upsertData = {
       id: gw.id,
@@ -141,7 +140,6 @@ export function useAdminSaaS() {
     }
   }
 
-  // Remover plano
   async function deletePlan(planId: string) {
     const { error } = await supabase.from('plans').delete().eq('id', planId);
     if (error) {
@@ -152,7 +150,6 @@ export function useAdminSaaS() {
     }
   }
 
-  // Remover gateway
   async function deleteGateway(gatewayId: string) {
     const { error } = await supabase.from('payment_gateways').delete().eq('id', gatewayId);
     if (error) {
@@ -163,5 +160,62 @@ export function useAdminSaaS() {
     }
   }
 
-  return { plans, gateways, users, subscriptions, loading, savePlan, saveGateway, deletePlan, deleteGateway };
+  // --- USUÁRIOS ---
+
+  // Criação via Supabase Auth Admin API + profiles
+  async function createUser(user: Partial<User> & { password: string }) {
+    // Cria user com supabase.auth.admin.createUser e insere na profiles
+    const { data: userRes, error: errCreate } = await supabase.auth.admin.createUser({
+      email: user.email!,
+      password: user.password!,
+      email_confirm: true,
+    });
+    if (errCreate || !userRes || !userRes.user) {
+      toast({ title: "Erro ao criar usuário", description: errCreate?.message || "Erro", variant: "destructive" });
+      return;
+    }
+    const { error: errProfile } = await supabase.from("profiles").insert([{ user_id: userRes.user.id, full_name: user.full_name, is_active: true }]);
+    if (errProfile) {
+      toast({ title: "Usuário criado, mas perfil não foi salvo", description: errProfile.message, variant: "destructive" });
+    } else {
+      toast({ title: "Usuário criado!" });
+      setUsers(prev => prev.concat({
+        id: userRes.user.id, 
+        email: user.email ?? "", 
+        full_name: user.full_name, 
+        is_active: true,
+      }));
+    }
+  }
+
+  // Atualiza perfil do usuário (nome e ativo)
+  async function updateUser(user: Partial<User>) {
+    if (!user.id) return;
+    const { error } = await supabase.from("profiles").update({ full_name: user.full_name, is_active: user.is_active }).eq("user_id", user.id);
+    if (error) {
+      toast({ title: "Erro ao atualizar usuário", description: error.message, variant: "destructive" });
+      return;
+    }
+    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, ...user } as User : u));
+    toast({ title: "Perfil atualizado!" });
+  }
+
+  // Ativar/desativar
+  async function setUserActive(userId: string, isActive: boolean) {
+    const { error } = await supabase.from("profiles").update({ is_active: isActive }).eq("user_id", userId);
+    if (error) {
+      toast({ title: "Erro ao atualizar acesso", description: error.message, variant: "destructive" });
+    } else {
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_active: isActive } : u));
+      toast({ title: isActive ? "Usuário ativado!" : "Usuário desativado!" });
+    }
+  }
+
+  // Definir permissões (para exemplo - admin fictício, será no profiles para facilitar)
+  async function setUserPermission(userId: string, isSuperAdmin: boolean) {
+    // Aqui deve criar/atualizar um campo "role" ou similar. Este exemplo só mostra o toast:
+    toast({ title: "Permissão", description: "Permissão atualizada (exemplo)." });
+  }
+
+  return { plans, gateways, users, subscriptions, loading, savePlan, saveGateway, deletePlan, deleteGateway, createUser, updateUser, setUserActive, setUserPermission };
 }
