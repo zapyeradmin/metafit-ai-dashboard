@@ -44,11 +44,26 @@ const PlanoDoDia = () => {
 
   // Função do botão: reforçar bloqueio se dados obrigatórios não existirem
   const handleGeneratePlan = async () => {
+    // Logs para debug detalhado
+    console.log("Generate button clicked");
+    console.log("user:", user);
+    console.log("profile:", profile);
+    console.log("prefs:", prefs);
+    console.log("loadingProfile", loadingProfile, "loadingPrefs", loadingPrefs);
+
     if (loadingProfile || loadingPrefs) {
       toast({
         title: "Aguarde...",
         description: "Carregando dados do perfil e preferências.",
         variant: "default"
+      });
+      return;
+    }
+    if (!user || !user.id) {
+      toast({
+        title: "Usuário não encontrado",
+        description: "Não foi possível identificar seu usuário. Faça login novamente.",
+        variant: "destructive"
       });
       return;
     }
@@ -64,6 +79,20 @@ const PlanoDoDia = () => {
       toast({
         title: "Complete suas preferências de treino",
         description: "Você precisa cadastrar as preferências de treino antes de gerar um plano. Role a página até a seção de 'Preferências de Treino'.",
+        variant: "destructive"
+      });
+      return;
+    }
+    // Checagens extras para garantir que todos os campos estão presentes
+    if (
+      typeof profile.fitness_goal === "undefined" ||
+      typeof prefs.experience_level === "undefined" ||
+      typeof prefs.training_days_per_week === "undefined" ||
+      typeof prefs.time_per_session === "undefined"
+    ) {
+      toast({
+        title: "Dados incompletos",
+        description: "Algum campo obrigatório do perfil ou preferências está faltando. Revise e salve novamente.",
         variant: "destructive"
       });
       return;
