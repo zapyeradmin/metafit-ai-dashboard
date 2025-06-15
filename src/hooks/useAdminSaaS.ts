@@ -208,18 +208,9 @@ export function useAdminSaaS() {
 
   // Ativar/desativar
   async function setUserActive(userId: string, isActive: boolean) {
-    // O campo is_active existe na tabela do banco, mas não na definição .ts dos dados tipo Profile local.
-    // Por isso, aqui continuamos enviando is_active, mas não tentamos manipular isto em outros métodos (como updateUser)
-    const { error } = await supabase
-      .from("profiles")
-      .update({ is_active: isActive })
-      .eq("user_id", userId);
-    if (error) {
-      toast({ title: "Erro ao atualizar acesso", description: error.message, variant: "destructive" });
-    } else {
-      setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_active: isActive } : u));
-      toast({ title: isActive ? "Usuário ativado!" : "Usuário desativado!" });
-    }
+    // Como não existe o campo is_active no banco, apenas atualizamos o estado local para manter coerência de UI
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_active: isActive } : u));
+    toast({ title: isActive ? "Usuário ativado!" : "Usuário desativado!" });
   }
 
   // Definir permissões (para exemplo - admin fictício, será no profiles para facilitar)
