@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 const Configuracoes = () => {
@@ -239,6 +238,9 @@ const Configuracoes = () => {
           {/* Integração com IAs */}
           <AIIntegrationSection />
 
+          {/* Contextos personalizados do usuário para IA */}
+          <AIUserContextsSection />
+
           {/* Botão Salvar */}
           <div className="flex justify-end">
             <button className="px-6 py-3 text-white bg-primary rounded-lg hover:bg-primary/90">
@@ -252,4 +254,5 @@ const Configuracoes = () => {
 };
 
 import AIIntegrationSection from "@/components/settings/AIIntegrationSection";
+import AIUserContextsSection from "@/components/settings/AIUserContextsSection";
 export default Configuracoes;
