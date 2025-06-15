@@ -148,23 +148,44 @@ export function usePlanoDoDiaController(
 
   // Efeito para criar/buscar treino
   useEffect(() => {
-    if (generating) return;
-    if (!allowAutoCreate) return; // <-- não cria nada se não pode
-    if (thisDayWorkout) {
-      fetchWorkoutExercises();
-    } else {
-      createDefaultWorkout();
+    // Nunca criar NADA sem autorização + dependências carregadas!
+    if (
+      generating ||
+      !allowAutoCreate ||
+      !thisDayWorkout
+    ) {
+      // Não cria automaticamente se não pode ou já existe treino
+      return;
     }
+    fetchWorkoutExercises();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, thisDayWorkout?.id, generating, refreshKey, allowAutoCreate]);
+
+  // Efeito para criar treino automatizado caso permitido
+  useEffect(() => {
+    if (
+      generating ||
+      !allowAutoCreate ||
+      thisDayWorkout
+    ) {
+      // Só cria se permitido, não estiver gerando, e não já existir treino
+      return;
+    }
+    createDefaultWorkout();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, thisDayWorkout?.id, generating, refreshKey, allowAutoCreate]);
 
   // Efeito para criar/buscar refeições
   useEffect(() => {
-    if (generating) return;
-    if (!allowAutoCreate) return; // <-- não cria nada se não pode
-    if (thisDayMeals.length === 0) {
-      createDefaultMeals();
+    if (
+      generating ||
+      !allowAutoCreate ||
+      thisDayMeals.length > 0
+    ) {
+      // Só cria se permitido, não estiver gerando, e ainda não houver refeições
+      return;
     }
+    createDefaultMeals();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, thisDayMeals.length, generating, refreshKey, allowAutoCreate]);
 
