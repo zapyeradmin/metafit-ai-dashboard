@@ -339,6 +339,104 @@ export type Database = {
         }
         Relationships: []
       }
+      user_health_data: {
+        Row: {
+          carbs_frequency: string | null
+          created_at: string
+          daily_activities: string[] | null
+          data_date: string
+          diagnosed_conditions: string[] | null
+          diagnosed_conditions_other: string | null
+          family_health_conditions: string[] | null
+          family_health_conditions_other: string | null
+          fruits_vegetables_frequency: string | null
+          has_physical_limitations: string | null
+          id: string
+          meals_per_day: string | null
+          medication_affects_exercise: string | null
+          pain_areas: string[] | null
+          physical_limitations_description: string | null
+          processed_food_frequency: string | null
+          protein_frequency: string | null
+          regular_medication: string | null
+          relaxation_techniques: string[] | null
+          sleep_hours: string | null
+          sleep_quality: number | null
+          specific_diet: string[] | null
+          specific_diet_other: string | null
+          stress_rating: number | null
+          updated_at: string
+          user_id: string
+          water_consumption: string | null
+        }
+        Insert: {
+          carbs_frequency?: string | null
+          created_at?: string
+          daily_activities?: string[] | null
+          data_date?: string
+          diagnosed_conditions?: string[] | null
+          diagnosed_conditions_other?: string | null
+          family_health_conditions?: string[] | null
+          family_health_conditions_other?: string | null
+          fruits_vegetables_frequency?: string | null
+          has_physical_limitations?: string | null
+          id?: string
+          meals_per_day?: string | null
+          medication_affects_exercise?: string | null
+          pain_areas?: string[] | null
+          physical_limitations_description?: string | null
+          processed_food_frequency?: string | null
+          protein_frequency?: string | null
+          regular_medication?: string | null
+          relaxation_techniques?: string[] | null
+          sleep_hours?: string | null
+          sleep_quality?: number | null
+          specific_diet?: string[] | null
+          specific_diet_other?: string | null
+          stress_rating?: number | null
+          updated_at?: string
+          user_id: string
+          water_consumption?: string | null
+        }
+        Update: {
+          carbs_frequency?: string | null
+          created_at?: string
+          daily_activities?: string[] | null
+          data_date?: string
+          diagnosed_conditions?: string[] | null
+          diagnosed_conditions_other?: string | null
+          family_health_conditions?: string[] | null
+          family_health_conditions_other?: string | null
+          fruits_vegetables_frequency?: string | null
+          has_physical_limitations?: string | null
+          id?: string
+          meals_per_day?: string | null
+          medication_affects_exercise?: string | null
+          pain_areas?: string[] | null
+          physical_limitations_description?: string | null
+          processed_food_frequency?: string | null
+          protein_frequency?: string | null
+          regular_medication?: string | null
+          relaxation_techniques?: string[] | null
+          sleep_hours?: string | null
+          sleep_quality?: number | null
+          specific_diet?: string[] | null
+          specific_diet_other?: string | null
+          stress_rating?: number | null
+          updated_at?: string
+          user_id?: string
+          water_consumption?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_health_data_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       user_physical_data: {
         Row: {
           allergies: string[] | null
