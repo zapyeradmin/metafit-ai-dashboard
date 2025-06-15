@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { DailyMeal } from '@/hooks/useNutrition';
 import { useMetabolicCalculations } from '@/hooks/useMetabolicCalculations';
@@ -6,48 +7,56 @@ interface NutritionStatsProps {
   meals: DailyMeal[];
 }
 
+const toDisplayNumber = (value: any, decimals = 0) => {
+  if (value == null) return '-';
+  const num = Number(value);
+  if (isNaN(num)) return '-';
+  return decimals > 0 ? num.toFixed(decimals) : Math.round(num);
+};
+
 const NutritionStats = ({ meals }: NutritionStatsProps) => {
   const { metabolicData, isLoading } = useMetabolicCalculations(meals);
 
   if (isLoading) return <div>Carregando...</div>;
 
+  // Exibição padronizada e precisa, sem manipulação adicional
   const stats = [
     {
       label: 'Total de Proteínas',
-      value: `${Math.round(metabolicData.totalProtein)}g`,
+      value: `${toDisplayNumber(metabolicData.totalProtein)}g`,
       icon: 'ri-leaf-line',
       color: 'text-green-500 bg-green-50'
     },
     {
       label: 'Total de Carboidratos',
-      value: `${Math.round(metabolicData.totalCarbs)}g`,
+      value: `${toDisplayNumber(metabolicData.totalCarbs)}g`,
       icon: 'ri-plant-line',
       color: 'text-blue-500 bg-blue-50'
     },
     {
       label: 'Total de Gorduras',
-      value: `${Math.round(metabolicData.totalFat)}g`,
+      value: `${toDisplayNumber(metabolicData.totalFat)}g`,
       icon: 'ri-drop-line',
       color: 'text-yellow-500 bg-yellow-50'
     },
     {
       label: 'Calorias Necessárias',
-      value: `${metabolicData.tev} kcal`,
+      value: `${toDisplayNumber(metabolicData.tev)} kcal`,
       icon: 'ri-target-line',
       color: 'text-purple-500 bg-purple-50'
     },
     {
       label: 'Calorias Consumidas',
-      value: `${metabolicData.caloriesConsumed} kcal`,
+      value: `${toDisplayNumber(metabolicData.caloriesConsumed)} kcal`,
       icon: 'ri-restaurant-line',
       color: 'text-orange-500 bg-orange-50'
     },
     {
       label: 'Diferença',
-      value: `${metabolicData.diffCalories} kcal`,
+      value: `${toDisplayNumber(metabolicData.diffCalories)} kcal`,
       icon: 'ri-scales-line',
-      color: metabolicData.diffCalories >= 0 
-        ? 'text-red-500 bg-red-50' 
+      color: metabolicData.diffCalories >= 0
+        ? 'text-red-500 bg-red-50'
         : 'text-green-500 bg-green-50'
     }
   ];
@@ -72,3 +81,4 @@ const NutritionStats = ({ meals }: NutritionStatsProps) => {
 };
 
 export default NutritionStats;
+
