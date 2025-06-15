@@ -7,8 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+// Import Json type for stricter typing
+import type { Json } from "@/integrations/supabase/types";
 
-// Tipos Supabase simplificados
 type Plan = {
   id: string;
   name: string;
@@ -16,7 +17,7 @@ type Plan = {
   price_monthly: number;
   price_yearly: number;
   discount_percent_yearly: number;
-  resource_limits: any;
+  resource_limits: Json | null;
   is_active: boolean;
 };
 
@@ -25,7 +26,7 @@ type Gateway = {
   name: string;
   provider: string;
   is_active: boolean;
-  credentials: any;
+  credentials: Json | null;
 };
 
 type User = {
@@ -64,17 +65,17 @@ function useAdminSaaS() {
       // Gateways
       const { data: gatewaysDb } = await supabase.from("payment_gateways").select("*");
       setGateways(gatewaysDb || []);
-      // Usuários (só mostra id/email - campo full_name opcional se tiver tabela profiles criada)
+      // Usuários (busca perfis)
       const { data: usersDb } = await supabase.from("profiles").select("user_id, full_name");
-      // Busca emails na auth.users (mostra apenas amostra por limitações no cliente)
-      const { data: authDb } = await supabase.auth.admin.listUsers({limit: 100});
+      // Busca emails na auth.users (amostra, sem limit param)
+      const authDb = await supabase.auth.admin.listUsers();
       let usersFinal: User[] = [];
-      if (usersDb && authDb?.users) {
-        usersFinal = usersDb
-          .map((p: any) => {
-            const authUser = authDb.users.find(u => u.id === p.user_id);
-            return { id: p.user_id, email: authUser?.email ?? "", full_name: p.full_name || "" };
-          });
+      // Defensiva: usersDb e authDb?.users devem ser arrays
+      if (Array.isArray(usersDb) && Array.isArray(authDb?.users)) {
+        usersFinal = usersDb.map((p: any) => {
+          const authUser = authDb.users.find((u: any) => u.id === p.user_id);
+          return { id: p.user_id, email: authUser?.email ?? "", full_name: p.full_name || "" };
+        });
       }
       setUsers(usersFinal);
       // Subs
@@ -88,9 +89,21 @@ function useAdminSaaS() {
 
   // Salva/atualiza plano
   async function savePlan(plan: Partial<Plan>) {
+    // Only pass valid fields required by table type
+    const upsertData = {
+      id: plan.id,
+      name: plan.name ?? "",
+      description: plan.description ?? "",
+      price_monthly: plan.price_monthly ?? 0,
+      price_yearly: plan.price_yearly ?? 0,
+      discount_percent_yearly: plan.discount_percent_yearly ?? 0,
+      resource_limits: plan.resource_limits ?? null,
+      is_active: plan.is_active ?? true,
+      updated_at: new Date().toISOString(),
+    };
     const { data, error } = await supabase
       .from("plans")
-      .upsert([{ ...plan, updated_at: new Date().toISOString() }], { onConflict: "id" });
+      .upsert([upsertData], { onConflict: "id" });
     if (error) {
       toast({ title: "Erro ao salvar plano", description: error.message, variant: "destructive" });
     }
@@ -98,23 +111,35 @@ function useAdminSaaS() {
       toast({ title: "Plano salvo!" });
       setPlans(prev => {
         if (plan.id) return prev.map(p => (p.id === plan.id ? { ...p, ...plan } as Plan : p));
-        return prev.concat(data as Plan[]);
+        // Upsert returns the new object in data as an array
+        if (Array.isArray(data) && data.length > 0) return prev.concat(data[0]);
+        return prev;
       });
     }
   }
 
   // Salva/atualiza gateway
   async function saveGateway(gw: Partial<Gateway>) {
+    // name/provider are required, credentials must be a Json
+    const upsertData = {
+      id: gw.id,
+      name: gw.name ?? "",
+      provider: gw.provider ?? "",
+      is_active: gw.is_active ?? true,
+      credentials: gw.credentials ?? null,
+      updated_at: new Date().toISOString(),
+    };
     const { data, error } = await supabase
       .from("payment_gateways")
-      .upsert([{ ...gw, updated_at: new Date().toISOString() }], { onConflict: "id" });
+      .upsert([upsertData], { onConflict: "id" });
     if (error) {
       toast({ title: "Erro ao salvar gateway", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Gateway salvo!" });
       setGateways(prev => {
         if (gw.id) return prev.map(g => (g.id === gw.id ? { ...g, ...gw } as Gateway : g));
-        return prev.concat(data as Gateway[]);
+        if (Array.isArray(data) && data.length > 0) return prev.concat(data[0]);
+        return prev;
       });
     }
   }
@@ -235,7 +260,11 @@ export default function AdminSaaSPage() {
 function PlanForm({ initial, onCancel, onSave }:
   { initial?: Partial<Plan> | null, onCancel: () => void, onSave: (p: Partial<Plan>) => void }
 ) {
-  const [form, setForm] = useState<Partial<Plan>>(initial || {});
+  const [form, setForm] = useState<Partial<Plan>>({
+    ...initial,
+    resource_limits: initial && typeof initial.resource_limits !== "undefined" ? initial.resource_limits : null,
+    is_active: initial?.is_active ?? true,
+  });
   return (
     <form onSubmit={e => { e.preventDefault(); onSave(form); }} className="space-y-2">
       <Label>Nome</Label>
@@ -260,7 +289,11 @@ function PlanForm({ initial, onCancel, onSave }:
 function GatewayForm({ initial, onCancel, onSave }:
   { initial?: Partial<Gateway> | null, onCancel: () => void, onSave: (g: Partial<Gateway>) => void }
 ) {
-  const [form, setForm] = useState<Partial<Gateway>>(initial || {});
+  const [form, setForm] = useState<Partial<Gateway>>({
+    ...initial,
+    credentials: initial && typeof initial.credentials !== "undefined" ? initial.credentials : null,
+    is_active: initial?.is_active ?? true,
+  });
   return (
     <form onSubmit={e => { e.preventDefault(); onSave(form); }} className="space-y-2">
       <Label>Nome</Label>
