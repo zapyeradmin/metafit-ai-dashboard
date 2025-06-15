@@ -1,74 +1,39 @@
-import { useState, useEffect, useCallback } from 'react';
+
+import { useEffect, useCallback } from 'react';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useNutrition } from '@/hooks/useNutrition';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { usePlanoExercises } from './usePlanoExercises';
+import { usePlanoMeals } from './usePlanoMeals';
 
 export function usePlanoDoDiaController(selectedDate: string, generating = false, refreshKey = 0) {
-  const [workoutExercises, setWorkoutExercises] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { workouts, getTodayWorkout, completeWorkout, completeExercise, refetch: refetchWorkouts } = useWorkouts();
-  const { meals, getTodayMeals, completeMeal, refetch: refetchMeals } = useNutrition();
+  const { workouts, completeWorkout, completeExercise, refetch: refetchWorkouts } = useWorkouts();
+  const { meals, completeMeal, refetch: refetchMeals } = useNutrition();
   const { toast } = useToast();
 
-  // Funções filtradas para a data selecionada
+  // Filtra treino/refeições do dia
   const thisDayWorkout = workouts.find(w => w.date === selectedDate);
   const thisDayMeals = meals.filter(m => m.date === selectedDate);
 
-  // Para debug
-  console.log('[PlanoDoDia] selectedDate:', selectedDate);
-  console.log('[PlanoDoDia] thisDayWorkout:', thisDayWorkout);
-  console.log('[PlanoDoDia] thisDayMeals:', thisDayMeals);
+  // Exercícios - hook dividido
+  const {
+    workoutExercises,
+    loadingExercises,
+    fetchWorkoutExercises,
+    handleCompleteExercise
+  } = usePlanoExercises(thisDayWorkout, refetchWorkouts);
 
-  const fetchWorkoutExercises = useCallback(async () => {
-    if (!thisDayWorkout) {
-      setWorkoutExercises([]);
-      return;
-    }
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('workout_exercises')
-        .select(`
-          *,
-          exercise:exercises(name, muscle_group, equipment)
-        `)
-        .eq('daily_workout_id', thisDayWorkout.id)
-        .order('order_index');
+  // Refeições - hook dividido
+  const {
+    handleCompleteMeal
+  } = usePlanoMeals(thisDayMeals, refetchMeals);
 
-      if (error) {
-        console.error('Error fetching exercises:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao carregar exercícios",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      setWorkoutExercises(data || []);
-      console.log('[PlanoDoDia] workoutExercises:', data);
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao carregar exercícios",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [thisDayWorkout, toast]);
-
+  // Criação default de treino
   const createDefaultWorkout = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('[PlanoDoDia] createDefaultWorkout: no user');
-        return;
-      }
-
-      setLoading(true);
+      if (!user) return;
 
       const { data: workout, error: workoutError } = await supabase
         .from('daily_workouts')
@@ -83,7 +48,6 @@ export function usePlanoDoDiaController(selectedDate: string, generating = false
         .single();
 
       if (workoutError) {
-        console.error('Error creating workout:', workoutError);
         toast({
           title: "Erro",
           description: "Erro ao criar treino",
@@ -99,7 +63,7 @@ export function usePlanoDoDiaController(selectedDate: string, generating = false
         .limit(4);
 
       if (exercises && exercises.length > 0) {
-        const workoutExerciseData = exercises.map((exercise, index) => ({
+        const workoutExerciseData = exercises.map((exercise: any, index: number) => ({
           daily_workout_id: workout.id,
           exercise_id: exercise.id,
           sets: 4,
@@ -121,26 +85,19 @@ export function usePlanoDoDiaController(selectedDate: string, generating = false
         description: "Treino criado com sucesso!"
       });
     } catch (error) {
-      console.error('Error creating workout:', error);
       toast({
         title: "Erro",
         description: "Erro ao criar treino",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   }, [selectedDate, refetchWorkouts, toast]);
 
+  // Criação default de refeições
   const createDefaultMeals = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('[PlanoDoDia] createDefaultMeals: no user');
-        return;
-      }
-
-      setLoading(true);
+      if (!user) return;
 
       const defaultMeals = [
         { meal_type: 'cafe_manha', name: 'Café da manhã', calories: 450, protein: 25, carbs: 45, fat: 15 },
@@ -163,7 +120,6 @@ export function usePlanoDoDiaController(selectedDate: string, generating = false
         .insert(mealsData);
 
       if (error) {
-        console.error('Error creating meals:', error);
         toast({
           title: "Erro",
           description: "Erro ao criar refeições",
@@ -178,20 +134,17 @@ export function usePlanoDoDiaController(selectedDate: string, generating = false
         description: "Refeições criadas com sucesso!"
       });
     } catch (error) {
-      console.error('Error creating meals:', error);
       toast({
         title: "Erro",
         description: "Erro ao criar refeições",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   }, [selectedDate, refetchMeals, toast]);
 
-  // Efeito: busca/existe treino para o dia selecionado?
+  // Efeito para criar/buscar treino
   useEffect(() => {
-    if (generating) return; // Não cria default se estamos gerando
+    if (generating) return;
     if (thisDayWorkout) {
       fetchWorkoutExercises();
     } else {
@@ -200,32 +153,14 @@ export function usePlanoDoDiaController(selectedDate: string, generating = false
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, thisDayWorkout?.id, generating, refreshKey]);
 
-  // Efeito: busca/existe refeições para o dia selecionado?
+  // Efeito para criar/buscar refeições
   useEffect(() => {
-    if (generating) return; // Não cria default se estamos gerando
+    if (generating) return;
     if (thisDayMeals.length === 0) {
       createDefaultMeals();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, thisDayMeals.length, generating, refreshKey]);
-
-  // Marcação de conclusão
-  const handleCompleteExercise = async (exerciseId: string) => {
-    try {
-      await completeExercise(exerciseId);
-      await fetchWorkoutExercises();
-    } catch (error) {
-      console.error('Error completing exercise:', error);
-    }
-  };
-
-  const handleCompleteMeal = async (mealId: string) => {
-    try {
-      await completeMeal(mealId);
-    } catch (error) {
-      console.error('Error completing meal:', error);
-    }
-  };
 
   // Novo: permite forçar refresh total após geração de plano
   const refetchAll = async () => {
@@ -236,13 +171,11 @@ export function usePlanoDoDiaController(selectedDate: string, generating = false
 
   return {
     workoutExercises,
-    loading,
+    loading: loadingExercises,
     todayWorkout: thisDayWorkout,
     todayMeals: thisDayMeals,
-    handleCompleteExercise,
-    handleCompleteMeal,
+    handleCompleteExercise: (id: string) => handleCompleteExercise(id, completeExercise),
+    handleCompleteMeal: (id: string) => handleCompleteMeal(id, completeMeal),
     refetchAll,
   };
 }
-
-// Arquivo está ficando muito grande. Considere pedir para refatorar em arquivos menores.
