@@ -4,10 +4,12 @@ import PhysicalDataTab from "./MeusDados/PhysicalDataTab";
 import WorkoutsTab from "./MeusDados/WorkoutsTab";
 import NutritionTab from "./MeusDados/NutritionTab";
 import ExportTab from "./MeusDados/ExportTab";
+import HealthDataTab from "./MeusDados/HealthDataTab";
 
 const tabs = [
   { id: "measurements", label: "Medidas Corporais", icon: "ri-body-scan-line" },
   { id: "physical-data", label: "Dados Físicos", icon: "ri-heart-pulse-line" },
+  { id: "health-data", label: "Dados de Saúde", icon: "ri-first-aid-kit-line" },
   { id: "workouts", label: "Histórico de Treinos", icon: "ri-calendar-line" },
   { id: "nutrition", label: "Dados Nutricionais", icon: "ri-restaurant-line" },
   { id: "export", label: "Exportar Dados", icon: "ri-download-line" },
@@ -53,6 +55,7 @@ const MeusDados = () => {
         <div className="bg-white rounded-lg shadow-sm p-6">
           {activeTab === "measurements" && <MeasurementsTab />}
           {activeTab === "physical-data" && <PhysicalDataTab />}
+          {activeTab === "health-data" && <HealthDataTab />}
           {activeTab === "workouts" && <WorkoutsTab />}
           {activeTab === "nutrition" && <NutritionTab />}
           {activeTab === "export" && <ExportTab />}
