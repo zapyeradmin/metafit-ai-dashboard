@@ -191,7 +191,13 @@ export function useAdminSaaS() {
   // Atualiza perfil do usuário (nome e ativo)
   async function updateUser(user: Partial<User>) {
     if (!user.id) return;
-    const { error } = await supabase.from("profiles").update({ full_name: user.full_name, is_active: user.is_active }).eq("user_id", user.id);
+    // Remover is_active do objeto de update, já que não existe em profiles
+    const updatePayload: { full_name?: string } = {};
+    if (user.full_name !== undefined) updatePayload.full_name = user.full_name;
+    const { error } = await supabase
+      .from("profiles")
+      .update(updatePayload)
+      .eq("user_id", user.id);
     if (error) {
       toast({ title: "Erro ao atualizar usuário", description: error.message, variant: "destructive" });
       return;
@@ -202,7 +208,12 @@ export function useAdminSaaS() {
 
   // Ativar/desativar
   async function setUserActive(userId: string, isActive: boolean) {
-    const { error } = await supabase.from("profiles").update({ is_active: isActive }).eq("user_id", userId);
+    // O campo is_active existe na tabela do banco, mas não na definição .ts dos dados tipo Profile local.
+    // Por isso, aqui continuamos enviando is_active, mas não tentamos manipular isto em outros métodos (como updateUser)
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_active: isActive })
+      .eq("user_id", userId);
     if (error) {
       toast({ title: "Erro ao atualizar acesso", description: error.message, variant: "destructive" });
     } else {
