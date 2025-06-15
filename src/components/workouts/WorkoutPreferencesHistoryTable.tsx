@@ -12,7 +12,7 @@ if (typeof window !== "undefined") {
 }
 
 interface Props {
-  history: UserWorkoutPrefs[];
+  history?: UserWorkoutPrefs[];
   loading: boolean;
 }
 
@@ -50,7 +50,7 @@ function exportWorkoutPrefsPdf(data: UserWorkoutPrefs) {
   doc.save("preferencia-treino.pdf");
 }
 
-const WorkoutPreferencesHistoryTable: React.FC<Props> = ({ history, loading }) => {
+const WorkoutPreferencesHistoryTable: React.FC<Props> = ({ history = [], loading }) => {
   return (
     <div>
       <h4 className="font-semibold mt-4 mb-2">Histórico de Preferências</h4>
@@ -87,7 +87,7 @@ const WorkoutPreferencesHistoryTable: React.FC<Props> = ({ history, loading }) =
                   >
                     <FileText className="w-4 h-4 text-red-600" />
                   </Button>
-                  {/* Aqui pode ser adicionado botão visualizar/detalhes */}
+                  {/* Mais ações podem ser adicionadas aqui */}
                 </td>
               </tr>
             ))}
