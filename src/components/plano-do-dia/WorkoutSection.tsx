@@ -63,7 +63,6 @@ const WorkoutSection = ({
     });
   };
 
-  // Agrupar exercícios do dia (musculação de um lado, funcional do outro)
   const { groupMap, funcional } = groupExercises(workoutExercises);
 
   return (
@@ -91,37 +90,47 @@ const WorkoutSection = ({
             <div key={mg}>
               <div className="font-semibold mb-2 text-blue-700">{mg}</div>
               <div className="space-y-2">
-                {exList.map((exercise, idx) => (
-                  <div
-                    key={exercise.id || idx}
-                    className="flex items-center p-3 bg-gray-50 rounded-lg mb-1"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={exercise.is_completed}
-                      onChange={() => exercise.id && onCompleteExercise(exercise.id)}
-                      className="h-4 w-4 text-primary"
-                    />
-                    <div className="ml-4 flex-1">
-                      <h5 className="text-sm font-medium text-gray-900">
-                        {exercise.exercise?.name || "Exercício"}
-                      </h5>
-                      <p className="text-xs text-gray-600">
-                        {exercise.sets ? `${exercise.sets} séries` : ""}
-                        {typeof exercise.reps === "number" ? ` × ${exercise.reps} reps` : ""}
-                        {/* Exibe o peso só se existir e for maior que zero */}
-                        {typeof exercise.weight === "number" && exercise.weight > 0
-                          ? ` • ${exercise.weight}kg`
-                          : ""}
-                      </p>
-                    </div>
-                    {exercise.is_completed && (
-                      <div className="text-green-500 ml-2">
-                        <i className="ri-check-line w-5 h-5"></i>
+                {exList.map((exercise, idx) => {
+                  const nome = exercise.exercise?.name || exercise.notes || "Exercício";
+                  const sets =
+                    typeof exercise.sets === "number" && exercise.sets > 0
+                      ? `${exercise.sets} séries`
+                      : "— séries";
+                  const reps =
+                    typeof exercise.reps === "number" && exercise.reps > 0
+                      ? `× ${exercise.reps} reps`
+                      : "× — reps";
+                  const weight =
+                    typeof exercise.weight === "number" && exercise.weight > 0
+                      ? `• ${exercise.weight}kg`
+                      : "";
+                  return (
+                    <div
+                      key={exercise.id || idx}
+                      className="flex items-center p-3 bg-gray-50 rounded-lg mb-1"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={exercise.is_completed}
+                        onChange={() => exercise.id && onCompleteExercise(exercise.id)}
+                        className="h-4 w-4 text-primary"
+                      />
+                      <div className="ml-4 flex-1">
+                        <h5 className="text-sm font-medium text-gray-900">
+                          {nome}
+                        </h5>
+                        <p className="text-xs text-gray-600">
+                          {sets} {reps} {weight}
+                        </p>
                       </div>
-                    )}
-                  </div>
-                ))}
+                      {exercise.is_completed && (
+                        <div className="text-green-500 ml-2">
+                          <i className="ri-check-line w-5 h-5"></i>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : null
@@ -138,11 +147,11 @@ const WorkoutSection = ({
                   className="flex items-center p-3 bg-green-50 rounded-lg border border-green-200"
                 >
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-200 text-green-800 mr-3">
-                    {exercise.notes?.toLowerCase().includes('aeróbico') ? '🏃' : '🧘'}
+                    {exercise.notes?.toLowerCase().includes("aeróbico") ? "🏃" : "🧘"}
                   </div>
                   <div className="flex-1">
                     <h5 className="text-sm font-semibold text-green-800">
-                      {exercise.notes}
+                      {exercise.notes || "Atividade"}
                     </h5>
                   </div>
                   {exercise.is_completed && (
