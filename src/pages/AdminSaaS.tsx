@@ -119,7 +119,7 @@ function useAdminSaaS() {
       toast({ title: "Plano salvo!" });
       setPlans(prev => {
         if (plan.id) return prev.map(p => (p.id === plan.id ? { ...p, ...plan } as Plan : p));
-        // Upsert returns the new object in data as an array
+        // Defensive: check data is array and not null before accessing
         if (Array.isArray(data) && data.length > 0) return prev.concat(data[0]);
         return prev;
       });
