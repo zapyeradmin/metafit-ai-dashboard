@@ -1,10 +1,11 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { UserWorkoutPrefs } from "@/hooks/useUserWorkoutPreferences";
 import { Button } from "@/components/ui/button";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { FileText } from "lucide-react";
+import { FileText, Eye } from "lucide-react";
+import WorkoutPrefsDetailsModal from "./WorkoutPrefsDetailsModal";
 
 if (typeof window !== "undefined") {
   // @ts-ignore
@@ -51,6 +52,14 @@ function exportWorkoutPrefsPdf(data: UserWorkoutPrefs) {
 }
 
 const WorkoutPreferencesHistoryTable: React.FC<Props> = ({ history = [], loading }) => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedPrefs, setSelectedPrefs] = useState<UserWorkoutPrefs | null>(null);
+
+  const handleView = (prefs: UserWorkoutPrefs) => {
+    setSelectedPrefs(prefs);
+    setModalOpen(true);
+  };
+
   return (
     <div>
       <h4 className="font-semibold mt-4 mb-2">Histórico de Preferências</h4>
@@ -78,7 +87,15 @@ const WorkoutPreferencesHistoryTable: React.FC<Props> = ({ history = [], loading
                 <td className="pr-2 py-1">{h.training_days_per_week ?? "-"}</td>
                 <td className="pr-2 py-1">{h.time_per_session ?? "-"}</td>
                 <td className="pr-2 py-1">{h.focus_areas?.join(", ") ?? "-"}</td>
-                <td className="pr-2 py-1">
+                <td className="pr-2 py-1 flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleView(h)}
+                    title="Visualizar"
+                  >
+                    <Eye className="w-4 h-4 text-blue-600" />
+                  </Button>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -87,13 +104,18 @@ const WorkoutPreferencesHistoryTable: React.FC<Props> = ({ history = [], loading
                   >
                     <FileText className="w-4 h-4 text-red-600" />
                   </Button>
-                  {/* Mais ações podem ser adicionadas aqui */}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
+
+      <WorkoutPrefsDetailsModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        prefs={selectedPrefs}
+      />
     </div>
   );
 };
