@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -58,7 +57,12 @@ const Layout = ({ children }: LayoutProps) => {
       {/* Sidebar */}
       <aside className="hidden md:flex md:flex-col w-64 bg-white border-r border-gray-200">
         <div className="p-4 flex items-center justify-center border-b border-gray-200">
-          <h1 className="text-2xl font-pacifico text-primary">MetaFit AI</h1>
+          <img
+            src="/lovable-uploads/b0aaa10b-4f66-4468-86bb-c76e89ee01c9.png"
+            alt="Logo MetaFit AI"
+            className="h-9 object-contain"
+            style={{ maxWidth: 170 }}
+          />
         </div>
         <div className="flex flex-col flex-grow p-4 overflow-y-auto">
           <nav className="flex-1 space-y-2">
@@ -123,7 +127,12 @@ const Layout = ({ children }: LayoutProps) => {
                 >
                   <i className="ri-menu-line w-6 h-6"></i>
                 </button>
-                <h1 className="ml-3 text-xl font-pacifico text-primary">MetaFit AI</h1>
+                <img
+                  src="/lovable-uploads/b0aaa10b-4f66-4468-86bb-c76e89ee01c9.png"
+                  alt="Logo MetaFit AI"
+                  className="ml-3 h-8 object-contain"
+                  style={{ maxWidth: 130 }}
+                />
               </div>
               <div className="flex-1 flex justify-end">
                 <div className="ml-4 flex items-center md:ml-6">
@@ -158,7 +167,12 @@ const Layout = ({ children }: LayoutProps) => {
           <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setIsSidebarOpen(false)}></div>
           <aside className="fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-gray-200">
             <div className="p-4 flex items-center justify-between border-b border-gray-200">
-              <h1 className="text-2xl font-pacifico text-primary">MetaFit AI</h1>
+              <img
+                src="/lovable-uploads/b0aaa10b-4f66-4468-86bb-c76e89ee01c9.png"
+                alt="Logo MetaFit AI"
+                className="h-8 object-contain"
+                style={{ maxWidth: 130 }}
+              />
               <button onClick={() => setIsSidebarOpen(false)}>
                 <i className="ri-close-line w-6 h-6 text-gray-500"></i>
               </button>
