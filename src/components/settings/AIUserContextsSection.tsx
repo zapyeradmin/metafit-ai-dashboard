@@ -5,9 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function AIUserContextsSection() {
-  const { fetchUserContexts, addUserContext, updateUserContext, deleteUserContext } = useAIUserContexts();
+  // Recupera o usuário autenticado
+  const { user } = useAuth();
+  const userId = user?.id;
+
+  // Usa os métodos corretos do hook
+  const { fetchContexts, addContext, updateContext, removeContext } = useAIUserContexts(userId);
   const { toast } = useToast();
   const [contexts, setContexts] = useState<AIUserContext[]>([]);
   const [loading, setLoading] = useState(false);
@@ -20,12 +26,12 @@ export default function AIUserContextsSection() {
   useEffect(() => {
     handleRefresh();
     // eslint-disable-next-line
-  }, []);
+  }, [userId]);
 
   async function handleRefresh() {
     setLoading(true);
     try {
-      const data = await fetchUserContexts();
+      const data = await fetchContexts();
       setContexts(data);
     } catch (err: any) {
       toast({ title: "Erro ao carregar contextos", description: err.message, variant: "destructive" });
@@ -38,10 +44,22 @@ export default function AIUserContextsSection() {
     setLoading(true);
     try {
       if (editingId) {
-        await updateUserContext(editingId, titleDraft.trim(), contentDraft.trim());
-        toast({ title: "Contexto atualizado!" });
+        // Atualiza contexto existente
+        const ctx = contexts.find((c) => c.id === editingId);
+        if (ctx) {
+          await updateContext({
+            ...ctx,
+            title: titleDraft.trim(),
+            content: contentDraft.trim(),
+          });
+          toast({ title: "Contexto atualizado!" });
+        }
       } else {
-        await addUserContext(titleDraft.trim(), contentDraft.trim());
+        // Adiciona novo contexto
+        await addContext({
+          title: titleDraft.trim(),
+          content: contentDraft.trim(),
+        } as Omit<AIUserContext, "id" | "created_at" | "updated_at">);
         toast({ title: "Contexto adicionado!" });
       }
       await handleRefresh();
@@ -64,7 +82,7 @@ export default function AIUserContextsSection() {
   async function handleDelete(id: string) {
     setLoading(true);
     try {
-      await deleteUserContext(id);
+      await removeContext(id);
       await handleRefresh();
       toast({ title: "Contexto removido!" });
     } catch (err: any) {
