@@ -1,6 +1,6 @@
 
-// Use npm: prefix for Deno edge functions
-import { serve } from "std/server";
+// Use correct Deno third-party import style and npm: for Supabase SDK
+import { serve } from "https://deno.land/std@0.203.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js";
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -55,3 +55,4 @@ serve(async (req) => {
 
   return new Response(JSON.stringify({ success: true, userId: userRes.user.id }), { status: 200 });
 });
+
