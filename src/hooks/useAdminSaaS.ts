@@ -174,15 +174,20 @@ export function useAdminSaaS() {
       toast({ title: "Erro ao criar usuário", description: errCreate?.message || "Erro", variant: "destructive" });
       return;
     }
-    const { error: errProfile } = await supabase.from("profiles").insert([{ user_id: userRes.user.id, full_name: user.full_name, is_active: true }]);
+    // Garante que o campo is_active SEMPRE é definido
+    const { error: errProfile } = await supabase.from("profiles").insert([{
+      user_id: userRes.user.id,
+      full_name: user.full_name,
+      is_active: true,
+    }]);
     if (errProfile) {
       toast({ title: "Usuário criado, mas perfil não foi salvo", description: errProfile.message, variant: "destructive" });
     } else {
       toast({ title: "Usuário criado!" });
       setUsers(prev => prev.concat({
-        id: userRes.user.id, 
-        email: user.email ?? "", 
-        full_name: user.full_name, 
+        id: userRes.user.id,
+        email: user.email ?? "",
+        full_name: user.full_name,
         is_active: true,
       }));
     }
