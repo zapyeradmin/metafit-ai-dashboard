@@ -16,12 +16,19 @@ import { useProfile } from "@/hooks/useProfile";
 import { useUserWorkoutPreferences } from "@/hooks/useUserWorkoutPreferences";
 import { useToast } from "@/hooks/use-toast";
 import WorkoutPreferencesHistoryTable from "@/components/workouts/WorkoutPreferencesHistoryTable";
+import NutritionPreferencesForm from "@/components/nutrition/NutritionPreferencesForm";
+import NutritionPreferencesHistoryTable from "@/components/nutrition/NutritionPreferencesHistoryTable";
+import NutritionPrefsDetailsModal from "@/components/nutrition/NutritionPrefsDetailsModal";
+import { useUserNutritionPreferences } from "@/hooks/useUserNutritionPreferences";
 
 const PlanoDoDia = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [formVisible, setFormVisible] = useState(false);
+
+  // Novo: Visibilidade do formulário de preferências de alimentação
+  const [nutritionFormVisible, setNutritionFormVisible] = useState(false);
 
   const { user } = useAuth();
   const { generate, loading: loadingGerarPlano } = useGenerateWorkoutPlan(user?.id);
@@ -30,6 +37,9 @@ const PlanoDoDia = () => {
   // Carregar perfil e preferências
   const { profile, loading: loadingProfile } = useProfile();
   const { history, addPreference, loading: loadingPrefs } = useUserWorkoutPreferences(user?.id);
+
+  // Novo: Nutrição
+  const { history: nutritionHistory, addPreference: addNutritionPref, loading: loadingNutritionPrefs } = useUserNutritionPreferences(user?.id);
 
   // Nova flag: só permite criar treino/refeição auto se perfil e prefs existem
   // Removido "prefs" pois não existe mais
@@ -48,7 +58,7 @@ const PlanoDoDia = () => {
 
   // Removido botão Gerar Plano Automático
 
-  if (loading || loadingProfile || loadingPrefs) {
+  if (loading || loadingProfile || loadingPrefs || loadingNutritionPrefs) {
     return <LoadingSpinner />;
   }
 
@@ -83,34 +93,6 @@ const PlanoDoDia = () => {
           </div>
         </div>
 
-        {user && (
-          <div className="mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-              <h2 className="text-lg font-bold">Preferências de Treino</h2>
-              {!formVisible && (
-                <button
-                  className="bg-blue-600 text-white rounded px-4 py-2"
-                  onClick={() => setFormVisible(true)}
-                >
-                  Criar Nova Preferência
-                </button>
-              )}
-            </div>
-            {formVisible && (
-              <WorkoutPreferencesForm
-                onSave={async (data) => {
-                  const ok = await addPreference(data);
-                  if (ok) setFormVisible(false);
-                  return ok;
-                }}
-                onCancel={() => setFormVisible(false)}
-                loading={loadingPrefs}
-              />
-            )}
-            <WorkoutPreferencesHistoryTable history={history || []} loading={loadingPrefs} />
-          </div>
-        )}
-
         <DateSelector 
           selectedDate={selectedDate}
           onDateChange={setSelectedDate}
@@ -123,6 +105,33 @@ const PlanoDoDia = () => {
           </TabsList>
 
           <TabsContent value="treino" className="space-y-6">
+            {user && (
+              <div className="mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                  <h2 className="text-lg font-bold">Preferências de Treino</h2>
+                  {!formVisible && (
+                    <button
+                      className="bg-blue-600 text-white rounded px-4 py-2"
+                      onClick={() => setFormVisible(true)}
+                    >
+                      Criar Nova Preferência
+                    </button>
+                  )}
+                </div>
+                {formVisible && (
+                  <WorkoutPreferencesForm
+                    onSave={async (data) => {
+                      const ok = await addPreference(data);
+                      if (ok) setFormVisible(false);
+                      return ok;
+                    }}
+                    onCancel={() => setFormVisible(false)}
+                    loading={loadingPrefs}
+                  />
+                )}
+                <WorkoutPreferencesHistoryTable history={history || []} loading={loadingPrefs} />
+              </div>
+            )}
             <WorkoutSection 
               todayWorkout={todayWorkout}
               workoutExercises={workoutExercises}
@@ -131,6 +140,33 @@ const PlanoDoDia = () => {
           </TabsContent>
 
           <TabsContent value="alimentacao" className="space-y-6">
+            {user && (
+              <div className="mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                  <h2 className="text-lg font-bold">Preferências de Alimentação</h2>
+                  {!nutritionFormVisible && (
+                    <button
+                      className="bg-blue-600 text-white rounded px-4 py-2"
+                      onClick={() => setNutritionFormVisible(true)}
+                    >
+                      Criar Nova Preferência
+                    </button>
+                  )}
+                </div>
+                {nutritionFormVisible && (
+                  <NutritionPreferencesForm
+                    onSave={async (data) => {
+                      const ok = await addNutritionPref(data);
+                      if (ok) setNutritionFormVisible(false);
+                      return ok;
+                    }}
+                    onCancel={() => setNutritionFormVisible(false)}
+                    loading={loadingNutritionPrefs}
+                  />
+                )}
+                <NutritionPreferencesHistoryTable history={nutritionHistory || []} loading={loadingNutritionPrefs} />
+              </div>
+            )}
             <NutritionStats selectedDate={selectedDate} />
             <NutritionSection 
               todayMeals={todayMeals}
