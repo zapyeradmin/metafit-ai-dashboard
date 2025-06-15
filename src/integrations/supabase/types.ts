@@ -452,6 +452,51 @@ export type Database = {
           },
         ]
       }
+      user_nutrition_preferences: {
+        Row: {
+          avoid_foods: string[]
+          calories_target: number
+          carb_target: number
+          created_at: string
+          diet_goal: string
+          dietary_restrictions: string[]
+          fat_target: number
+          id: string
+          preferred_foods: string[]
+          protein_target: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avoid_foods: string[]
+          calories_target: number
+          carb_target: number
+          created_at?: string
+          diet_goal: string
+          dietary_restrictions: string[]
+          fat_target: number
+          id?: string
+          preferred_foods: string[]
+          protein_target: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avoid_foods?: string[]
+          calories_target?: number
+          carb_target?: number
+          created_at?: string
+          diet_goal?: string
+          dietary_restrictions?: string[]
+          fat_target?: number
+          id?: string
+          preferred_foods?: string[]
+          protein_target?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_physical_data: {
         Row: {
           allergies: string[] | null

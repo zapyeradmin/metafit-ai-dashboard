@@ -1,22 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import type { Tables } from "@/integrations/supabase/types";
 
-export type UserNutritionPrefs = {
-  id?: string;
-  user_id: string;
-  diet_goal: string;
-  dietary_restrictions: string[];
-  preferred_foods: string[];
-  avoid_foods: string[];
-  calories_target: number;
-  protein_target: number;
-  carb_target: number;
-  fat_target: number;
-  created_at?: string;
-  updated_at?: string;
-};
+export type UserNutritionPrefs = Tables<"user_nutrition_preferences">;
 
 export function useUserNutritionPreferences(userId: string | undefined) {
   const [history, setHistory] = useState<UserNutritionPrefs[]>([]);
@@ -35,15 +22,18 @@ export function useUserNutritionPreferences(userId: string | undefined) {
         if (error) {
           toast({ title: "Erro ao carregar histórico", variant: "destructive" });
         }
-        setHistory(data || []);
+        // Type narrowing: only keep valid preference objects
+        setHistory((data ?? []) as UserNutritionPrefs[]);
         setLoading(false);
       });
-  }, [userId]);
+  }, [userId, toast]);
 
-  const addPreference = async (newPrefs: Omit<UserNutritionPrefs, "id" | "created_at" | "updated_at">) => {
-    if (!userId) return;
+  const addPreference = async (
+    newPrefs: Omit<UserNutritionPrefs, "id" | "created_at" | "updated_at">
+  ) => {
+    if (!userId) return false;
 
-    const updates: UserNutritionPrefs = {
+    const updates: Omit<UserNutritionPrefs, "id"> = {
       ...newPrefs,
       user_id: userId,
       updated_at: new Date().toISOString(),
@@ -81,7 +71,7 @@ export function useUserNutritionPreferences(userId: string | undefined) {
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
-        .then(({ data }) => setHistory(data || []));
+        .then(({ data }) => setHistory((data ?? []) as UserNutritionPrefs[]));
       return true;
     }
   };
