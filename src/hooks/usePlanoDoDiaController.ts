@@ -1,18 +1,17 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useNutrition } from '@/hooks/useNutrition';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-export function usePlanoDoDiaController(selectedDate: string) {
+export function usePlanoDoDiaController(selectedDate: string, generating = false, refreshKey = 0) {
   const [workoutExercises, setWorkoutExercises] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const { workouts, getTodayWorkout, completeWorkout, completeExercise, refetch: refetchWorkouts } = useWorkouts();
   const { meals, getTodayMeals, completeMeal, refetch: refetchMeals } = useNutrition();
   const { toast } = useToast();
 
-  // Funções filtradas para a data selecionada, não para "hoje"
+  // Funções filtradas para a data selecionada
   const thisDayWorkout = workouts.find(w => w.date === selectedDate);
   const thisDayMeals = meals.filter(m => m.date === selectedDate);
 
@@ -192,23 +191,23 @@ export function usePlanoDoDiaController(selectedDate: string) {
 
   // Efeito: busca/existe treino para o dia selecionado?
   useEffect(() => {
+    if (generating) return; // Não cria default se estamos gerando
     if (thisDayWorkout) {
       fetchWorkoutExercises();
     } else {
       createDefaultWorkout();
     }
-    // Atenção: dependências limitadas para evitar loops infinitos!
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, thisDayWorkout?.id]);
+  }, [selectedDate, thisDayWorkout?.id, generating, refreshKey]);
 
   // Efeito: busca/existe refeições para o dia selecionado?
   useEffect(() => {
+    if (generating) return; // Não cria default se estamos gerando
     if (thisDayMeals.length === 0) {
       createDefaultMeals();
     }
-    // Atenção: dependências limitadas para evitar loops infinitos!
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, thisDayMeals.length]);
+  }, [selectedDate, thisDayMeals.length, generating, refreshKey]);
 
   // Marcação de conclusão
   const handleCompleteExercise = async (exerciseId: string) => {
@@ -228,6 +227,13 @@ export function usePlanoDoDiaController(selectedDate: string) {
     }
   };
 
+  // Novo: permite forçar refresh total após geração de plano
+  const refetchAll = async () => {
+    await refetchWorkouts();
+    await refetchMeals();
+    await fetchWorkoutExercises();
+  }
+
   return {
     workoutExercises,
     loading,
@@ -235,8 +241,8 @@ export function usePlanoDoDiaController(selectedDate: string) {
     todayMeals: thisDayMeals,
     handleCompleteExercise,
     handleCompleteMeal,
+    refetchAll,
   };
 }
 
 // Arquivo está ficando muito grande. Considere pedir para refatorar em arquivos menores.
-

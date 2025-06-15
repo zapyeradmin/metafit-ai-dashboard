@@ -16,16 +16,21 @@ import { useGenerateWorkoutPlan } from "@/hooks/useGenerateWorkoutPlan";
 
 const PlanoDoDia = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [refreshKey, setRefreshKey] = useState(0); // forçar re-render/controlador
+
+  const { user } = useAuth();
+  const { generate, loading: loadingGerarPlano } = useGenerateWorkoutPlan(user?.id);
+
+  // Adaptação: fornecemos uma flag 'generating' p/ controller evitar criar treinos/refeições default
   const {
     workoutExercises,
     loading,
     todayWorkout,
     todayMeals,
     handleCompleteExercise,
-    handleCompleteMeal
-  } = usePlanoDoDiaController(selectedDate);
-  const { user } = useAuth();
-  const { generate, loading: loadingGerarPlano } = useGenerateWorkoutPlan(user?.id);
+    handleCompleteMeal,
+    refetchAll // novo retorno do hook
+  } = usePlanoDoDiaController(selectedDate, loadingGerarPlano, refreshKey);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -62,7 +67,11 @@ const PlanoDoDia = () => {
           </div>
           {user && (
             <Button
-              onClick={() => generate(selectedDate)}
+              onClick={async () => {
+                await generate(selectedDate);
+                // após gerar, força um refresh geral no controlador
+                setRefreshKey(k => k+1);
+              }}
               disabled={loadingGerarPlano}
               className="w-fit"
             >
