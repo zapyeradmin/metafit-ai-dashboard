@@ -12,21 +12,17 @@ export function usePlanoDoDiaController(selectedDate: string) {
   const { meals, getTodayMeals, completeMeal, refetch: refetchMeals } = useNutrition();
   const { toast } = useToast();
 
-  // Logs úteis para diagnóstico
+  // Funções filtradas para a data selecionada, não para "hoje"
+  const thisDayWorkout = workouts.find(w => w.date === selectedDate);
+  const thisDayMeals = meals.filter(m => m.date === selectedDate);
+
+  // Para debug
   console.log('[PlanoDoDia] selectedDate:', selectedDate);
-  console.log('[PlanoDoDia] workouts:', workouts);
-  console.log('[PlanoDoDia] meals:', meals);
-
-  // current day helpers
-  const todayWorkout = getTodayWorkout();
-  const todayMeals = getTodayMeals();
-
-  console.log('[PlanoDoDia] todayWorkout:', todayWorkout);
-  console.log('[PlanoDoDia] todayMeals:', todayMeals);
+  console.log('[PlanoDoDia] thisDayWorkout:', thisDayWorkout);
+  console.log('[PlanoDoDia] thisDayMeals:', thisDayMeals);
 
   const fetchWorkoutExercises = useCallback(async () => {
-    if (!todayWorkout) {
-      console.log('[PlanoDoDia] fetchWorkoutExercises: no todayWorkout');
+    if (!thisDayWorkout) {
       setWorkoutExercises([]);
       return;
     }
@@ -38,7 +34,7 @@ export function usePlanoDoDiaController(selectedDate: string) {
           *,
           exercise:exercises(name, muscle_group, equipment)
         `)
-        .eq('daily_workout_id', todayWorkout.id)
+        .eq('daily_workout_id', thisDayWorkout.id)
         .order('order_index');
 
       if (error) {
@@ -63,7 +59,7 @@ export function usePlanoDoDiaController(selectedDate: string) {
     } finally {
       setLoading(false);
     }
-  }, [todayWorkout, toast]);
+  }, [thisDayWorkout, toast]);
 
   const createDefaultWorkout = useCallback(async () => {
     try {
@@ -194,19 +190,25 @@ export function usePlanoDoDiaController(selectedDate: string) {
     }
   }, [selectedDate, refetchMeals, toast]);
 
+  // Efeito: busca/existe treino para o dia selecionado?
   useEffect(() => {
-    if (todayWorkout) {
+    if (thisDayWorkout) {
       fetchWorkoutExercises();
     } else {
       createDefaultWorkout();
     }
-  }, [todayWorkout?.id, fetchWorkoutExercises, createDefaultWorkout]);
+    // Atenção: dependências limitadas para evitar loops infinitos!
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, thisDayWorkout?.id]);
 
+  // Efeito: busca/existe refeições para o dia selecionado?
   useEffect(() => {
-    if (todayMeals.length === 0) {
+    if (thisDayMeals.length === 0) {
       createDefaultMeals();
     }
-  }, [todayMeals.length, createDefaultMeals]);
+    // Atenção: dependências limitadas para evitar loops infinitos!
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, thisDayMeals.length]);
 
   // Marcação de conclusão
   const handleCompleteExercise = async (exerciseId: string) => {
@@ -229,11 +231,12 @@ export function usePlanoDoDiaController(selectedDate: string) {
   return {
     workoutExercises,
     loading,
-    todayWorkout,
-    todayMeals,
+    todayWorkout: thisDayWorkout,
+    todayMeals: thisDayMeals,
     handleCompleteExercise,
     handleCompleteMeal,
   };
 }
 
 // Arquivo está ficando muito grande. Considere pedir para refatorar em arquivos menores.
+
