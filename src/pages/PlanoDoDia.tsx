@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DateSelector from '@/components/plano-do-dia/DateSelector';
@@ -43,7 +42,7 @@ const PlanoDoDia = () => {
     refetchAll
   } = usePlanoDoDiaController(selectedDate, loadingGerarPlano, refreshKey, allowAutoCreate);
 
-  // Função do botão: igual antes
+  // Função do botão: reforçar bloqueio se dados obrigatórios não existirem
   const handleGeneratePlan = async () => {
     if (loadingProfile || loadingPrefs) {
       toast({
@@ -109,7 +108,13 @@ const PlanoDoDia = () => {
           {user && (
             <Button
               onClick={handleGeneratePlan}
-              disabled={loadingGerarPlano || loadingProfile || loadingPrefs}
+              disabled={
+                loadingGerarPlano ||
+                loadingProfile ||
+                loadingPrefs ||
+                !profile ||
+                !prefs
+              }
               className="w-fit"
             >
               {loadingGerarPlano ? "Gerando plano..." : "Gerar Plano Automático (sobrescreve o existente)"}
@@ -160,4 +165,3 @@ const PlanoDoDia = () => {
 };
 
 export default PlanoDoDia;
-
