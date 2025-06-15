@@ -775,7 +775,17 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_meal_macros_user_day: {
+        Row: {
+          date: string | null
+          total_calories: number | null
+          total_carbs: number | null
+          total_fat: number | null
+          total_protein: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

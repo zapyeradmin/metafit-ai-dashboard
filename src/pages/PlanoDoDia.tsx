@@ -244,7 +244,7 @@ const PlanoDoDia = () => {
 
           {/* Aba ALIMENTAÇÃO: Apenas dados e componentes de Nutrição */}
           <TabsContent value="alimentacao" className="space-y-6">
-            <NutritionStats meals={todayMeals} />
+            <NutritionStats selectedDate={selectedDate} />
             <NutritionSection 
               todayMeals={todayMeals}
               onCompleteMeal={handleCompleteMeal}

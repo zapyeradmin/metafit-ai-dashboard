@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { DailyMeal } from '@/hooks/useNutrition';
-import { useMetabolicCalculations } from '@/hooks/useMetabolicCalculations';
+import { useDailyMacros } from "@/hooks/useDailyMacros";
 
 interface NutritionStatsProps {
-  meals: DailyMeal[];
+  meals: any[]; // não é mais usado mas permanece no prop para compat
+  selectedDate?: string;
 }
 
 const toDisplayNumber = (value: any, decimals = 0) => {
@@ -14,50 +14,38 @@ const toDisplayNumber = (value: any, decimals = 0) => {
   return decimals > 0 ? num.toFixed(decimals) : Math.round(num);
 };
 
-const NutritionStats = ({ meals }: NutritionStatsProps) => {
-  const { metabolicData, isLoading } = useMetabolicCalculations(meals);
+const NutritionStats = ({ selectedDate }: NutritionStatsProps) => {
+  // Por padrão usa a data de hoje caso não especificado
+  const dateStr = selectedDate ?? new Date().toISOString().split('T')[0];
+  const { data: dailyMacros, isLoading } = useDailyMacros(dateStr);
 
   if (isLoading) return <div>Carregando...</div>;
+  if (!dailyMacros) return <div>Nenhum dado encontrado para o dia.</div>;
 
-  // Exibição padronizada e precisa, sem manipulação adicional
   const stats = [
     {
       label: 'Total de Proteínas',
-      value: `${toDisplayNumber(metabolicData.totalProtein)}g`,
+      value: `${toDisplayNumber(dailyMacros.total_protein)}g`,
       icon: 'ri-leaf-line',
       color: 'text-green-500 bg-green-50'
     },
     {
       label: 'Total de Carboidratos',
-      value: `${toDisplayNumber(metabolicData.totalCarbs)}g`,
+      value: `${toDisplayNumber(dailyMacros.total_carbs)}g`,
       icon: 'ri-plant-line',
       color: 'text-blue-500 bg-blue-50'
     },
     {
       label: 'Total de Gorduras',
-      value: `${toDisplayNumber(metabolicData.totalFat)}g`,
+      value: `${toDisplayNumber(dailyMacros.total_fat)}g`,
       icon: 'ri-drop-line',
       color: 'text-yellow-500 bg-yellow-50'
     },
     {
-      label: 'Calorias Necessárias',
-      value: `${toDisplayNumber(metabolicData.tev)} kcal`,
-      icon: 'ri-target-line',
-      color: 'text-purple-500 bg-purple-50'
-    },
-    {
       label: 'Calorias Consumidas',
-      value: `${toDisplayNumber(metabolicData.caloriesConsumed)} kcal`,
+      value: `${toDisplayNumber(dailyMacros.total_calories)} kcal`,
       icon: 'ri-restaurant-line',
       color: 'text-orange-500 bg-orange-50'
-    },
-    {
-      label: 'Diferença',
-      value: `${toDisplayNumber(metabolicData.diffCalories)} kcal`,
-      icon: 'ri-scales-line',
-      color: metabolicData.diffCalories >= 0
-        ? 'text-red-500 bg-red-50'
-        : 'text-green-500 bg-green-50'
     }
   ];
 
@@ -81,4 +69,3 @@ const NutritionStats = ({ meals }: NutritionStatsProps) => {
 };
 
 export default NutritionStats;
-
