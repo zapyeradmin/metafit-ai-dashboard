@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { Json } from "@/integrations/supabase/types";
 
-type Plan = {
+// Export all relevant types
+export type Plan = {
   id: string;
   name: string;
   description: string;
@@ -14,19 +15,19 @@ type Plan = {
   resource_limits: Json | null;
   is_active: boolean;
 };
-type Gateway = {
+export type Gateway = {
   id: string;
   name: string;
   provider: string;
   is_active: boolean;
   credentials: Json | null;
 };
-type User = {
+export type User = {
   id: string;
   email: string;
   full_name?: string;
 };
-type UserSubscription = {
+export type UserSubscription = {
   id: string;
   user_id: string;
   plan_id: string;
