@@ -7,14 +7,50 @@ export function useGenerateWorkoutPlan(userId?: string) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const generate = async () => {
+  // Agora recebe data
+  const generate = async (selectedDate?: string) => {
     if (!userId) {
       toast({ title: "Usuário não encontrado", variant: "destructive" });
       return false;
     }
+    if (!selectedDate) {
+      toast({ title: "Data não selecionada", variant: "destructive" });
+      return false;
+    }
     setLoading(true);
     try {
-      // 1. Chama a Edge Function
+      // 0. Sobrescrever: excluir treinos e exercícios existentes desse dia e user
+      // 0.1 Buscar todos os daily_workouts do dia/usuário
+      const { data: existingDailyWorkouts, error: dwErr } = await supabase
+        .from("daily_workouts")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("date", selectedDate);
+
+      if (dwErr) {
+        toast({ title: "Erro ao buscar treinos antigos", variant: "destructive" });
+        setLoading(false);
+        return false;
+      }
+
+      // 0.2 Apagar exercícios e treinos desse dia
+      if (existingDailyWorkouts && existingDailyWorkouts.length > 0) {
+        const dailyIds = existingDailyWorkouts.map(dw => dw.id);
+
+        // Apaga exercícios relacionados
+        await supabase
+          .from("workout_exercises")
+          .delete()
+          .in("daily_workout_id", dailyIds);
+
+        // Apaga os treinos
+        await supabase
+          .from("daily_workouts")
+          .delete()
+          .in("id", dailyIds);
+      }
+
+      // 1. Chama a Edge Function normalmente
       const { data, error } = await supabase.functions.invoke("generate-workout-plan", {
         body: { user_id: userId },
       });
@@ -28,13 +64,10 @@ export function useGenerateWorkoutPlan(userId?: string) {
         return false;
       }
 
-      // 2. Persistir o plano gerado (salvar como daily_workouts e workout_exercises)
-      // O plano geralmente vai ter estrutura: { semana: [ { dia, exercicios: [...] }, ... ], ... }
-      // Para simplicidade, vamos gerar apenas para a semana atual e para o usuário.
+      // 2. Persistir o plano gerado (apenas o da semana do plano, como antes)
       const plan = data.workout_plan;
       const today = new Date();
-      const weekNumber = plan.semanas ? 1 : undefined; // ou como vier identificado
-      const week = plan.semanas ? plan.semanas[0] : plan.semana || plan; // generic fallback
+      const week = plan.semanas ? plan.semanas[0] : plan.semana || plan;
 
       if (!week || !week.dias || !Array.isArray(week.dias)) {
         toast({
@@ -45,11 +78,13 @@ export function useGenerateWorkoutPlan(userId?: string) {
         return false;
       }
 
-      // Para cada dia do plano: cria daily_workouts + workout_exercises
+      // 2.1 Salvar cada dia do plano — se for do dia selecionado
       for (const dia of week.dias) {
-        // Salva o workout do dia
         const workoutDate = dia.data || today.toISOString().split('T')[0];
-        const { data: dw, error: dwErr } = await supabase
+        // só insere se for a data selecionada
+        if (workoutDate !== selectedDate) continue;
+
+        const { data: dw, error: dwErr2 } = await supabase
           .from("daily_workouts")
           .upsert({
             user_id: userId,
@@ -62,7 +97,7 @@ export function useGenerateWorkoutPlan(userId?: string) {
           .select()
           .maybeSingle();
 
-        if (dwErr || !dw) continue;
+        if (dwErr2 || !dw) continue;
 
         // Cria exercises associados
         if (Array.isArray(dia.exercicios)) {
@@ -77,7 +112,6 @@ export function useGenerateWorkoutPlan(userId?: string) {
             is_completed: false,
           }));
 
-          // Não insere campo undefined (required)
           const cleanPayload = exercisesPayload.filter(e => !!e.daily_workout_id);
 
           if (cleanPayload.length > 0) {
@@ -102,4 +136,3 @@ export function useGenerateWorkoutPlan(userId?: string) {
 
   return { generate, loading };
 }
-

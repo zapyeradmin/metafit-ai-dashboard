@@ -61,8 +61,12 @@ const PlanoDoDia = () => {
             <p className="mt-1 text-sm text-gray-600">Organize seu treino e alimentação de hoje.</p>
           </div>
           {user && (
-            <Button onClick={generate} disabled={loadingGerarPlano} className="w-fit">
-              {loadingGerarPlano ? "Gerando plano..." : "Gerar Plano Automático"}
+            <Button
+              onClick={() => generate(selectedDate)}
+              disabled={loadingGerarPlano}
+              className="w-fit"
+            >
+              {loadingGerarPlano ? "Gerando plano..." : "Gerar Plano Automático (sobrescreve o existente)"}
             </Button>
           )}
         </div>
@@ -110,3 +114,4 @@ const PlanoDoDia = () => {
 };
 
 export default PlanoDoDia;
+
