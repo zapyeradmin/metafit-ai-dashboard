@@ -8,7 +8,7 @@ interface NotificationProps {
     workoutReminders: boolean;
     mealReminders: boolean;
   };
-  handleToggle: (setting: keyof typeof settings) => void;
+  handleToggle: (setting: keyof NotificationProps["settings"]) => void;
   disabled: boolean;
 }
 

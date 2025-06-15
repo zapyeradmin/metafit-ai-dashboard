@@ -53,7 +53,7 @@ const Configuracoes = () => {
           .eq('user_id', user.id)
           .maybeSingle();
         if (error) throw error;
-        if (data) {
+        if (data && typeof data === 'object' && !("message" in data)) {
           setSettings(prev => ({
             ...prev,
             notifications: data.notifications_enabled ?? prev.notifications,

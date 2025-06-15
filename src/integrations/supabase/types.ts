@@ -764,6 +764,7 @@ export type Database = {
           timezone: string | null
           updated_at: string
           user_id: string
+          webhook_url: string | null
           workout_reminders: boolean | null
         }
         Insert: {
@@ -777,6 +778,7 @@ export type Database = {
           timezone?: string | null
           updated_at?: string
           user_id: string
+          webhook_url?: string | null
           workout_reminders?: boolean | null
         }
         Update: {
@@ -790,6 +792,7 @@ export type Database = {
           timezone?: string | null
           updated_at?: string
           user_id?: string
+          webhook_url?: string | null
           workout_reminders?: boolean | null
         }
         Relationships: []
