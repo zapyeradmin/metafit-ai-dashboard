@@ -174,6 +174,7 @@ export type Database = {
           created_at: string
           date: string
           duration_minutes: number | null
+          generated_by_ai: boolean | null
           id: string
           is_completed: boolean | null
           muscle_groups: string[] | null
@@ -187,6 +188,7 @@ export type Database = {
           created_at?: string
           date: string
           duration_minutes?: number | null
+          generated_by_ai?: boolean | null
           id?: string
           is_completed?: boolean | null
           muscle_groups?: string[] | null
@@ -200,6 +202,7 @@ export type Database = {
           created_at?: string
           date?: string
           duration_minutes?: number | null
+          generated_by_ai?: boolean | null
           id?: string
           is_completed?: boolean | null
           muscle_groups?: string[] | null
@@ -228,6 +231,10 @@ export type Database = {
           instructions: string | null
           muscle_group: string
           name: string
+          progression_type: string | null
+          reps_range: string | null
+          rest_time_seconds: number | null
+          sets_range: string | null
         }
         Insert: {
           created_at?: string
@@ -237,6 +244,10 @@ export type Database = {
           instructions?: string | null
           muscle_group: string
           name: string
+          progression_type?: string | null
+          reps_range?: string | null
+          rest_time_seconds?: number | null
+          sets_range?: string | null
         }
         Update: {
           created_at?: string
@@ -246,6 +257,10 @@ export type Database = {
           instructions?: string | null
           muscle_group?: string
           name?: string
+          progression_type?: string | null
+          reps_range?: string | null
+          rest_time_seconds?: number | null
+          sets_range?: string | null
         }
         Relationships: []
       }
@@ -677,6 +692,59 @@ export type Database = {
         }
         Relationships: []
       }
+      user_workout_preferences: {
+        Row: {
+          available_equipment: string[]
+          created_at: string
+          current_plan_week: number | null
+          experience_level: string
+          focus_areas: string[] | null
+          id: string
+          injury_considerations: string[] | null
+          last_plan_generated: string | null
+          time_per_session: number
+          training_days_per_week: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          available_equipment: string[]
+          created_at?: string
+          current_plan_week?: number | null
+          experience_level: string
+          focus_areas?: string[] | null
+          id?: string
+          injury_considerations?: string[] | null
+          last_plan_generated?: string | null
+          time_per_session: number
+          training_days_per_week: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          available_equipment?: string[]
+          created_at?: string
+          current_plan_week?: number | null
+          experience_level?: string
+          focus_areas?: string[] | null
+          id?: string
+          injury_considerations?: string[] | null
+          last_plan_generated?: string | null
+          time_per_session?: number
+          training_days_per_week?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_workout_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       workout_exercises: {
         Row: {
           created_at: string
@@ -770,6 +838,39 @@ export type Database = {
           type?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      workout_templates: {
+        Row: {
+          created_at: string
+          experience_level: string
+          focus_areas: string[] | null
+          goal: string
+          id: string
+          structure: Json
+          template_name: string
+          training_days_per_week: number | null
+        }
+        Insert: {
+          created_at?: string
+          experience_level: string
+          focus_areas?: string[] | null
+          goal: string
+          id?: string
+          structure: Json
+          template_name: string
+          training_days_per_week?: number | null
+        }
+        Update: {
+          created_at?: string
+          experience_level?: string
+          focus_areas?: string[] | null
+          goal?: string
+          id?: string
+          structure?: Json
+          template_name?: string
+          training_days_per_week?: number | null
         }
         Relationships: []
       }

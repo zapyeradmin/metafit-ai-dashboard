@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DateSelector from '@/components/plano-do-dia/DateSelector';
@@ -9,6 +8,8 @@ import LoadingSpinner from '@/components/plano-do-dia/LoadingSpinner';
 import MetabolicStats from '@/components/plano-do-dia/MetabolicStats';
 import NutritionStats from '@/components/plano-do-dia/NutritionStats';
 import { usePlanoDoDiaController } from '@/hooks/usePlanoDoDiaController';
+import WorkoutPreferencesForm from "@/components/workouts/WorkoutPreferencesForm";
+import { useAuth } from "@/hooks/useAuth";
 
 const PlanoDoDia = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -20,6 +21,7 @@ const PlanoDoDia = () => {
     handleCompleteExercise,
     handleCompleteMeal
   } = usePlanoDoDiaController(selectedDate);
+  const { user } = useAuth();
 
   if (loading) {
     return <LoadingSpinner />;
@@ -32,6 +34,13 @@ const PlanoDoDia = () => {
           <h1 className="text-2xl font-bold text-gray-900">Plano do Dia</h1>
           <p className="mt-1 text-sm text-gray-600">Organize seu treino e alimentação de hoje.</p>
         </div>
+
+        {user && (
+          <div className="mb-8">
+            <h2 className="text-lg font-bold mb-2">Preferências de Treino</h2>
+            <WorkoutPreferencesForm userId={user.id} />
+          </div>
+        )}
 
         <DateSelector 
           selectedDate={selectedDate}
@@ -69,4 +78,3 @@ const PlanoDoDia = () => {
 };
 
 export default PlanoDoDia;
-
