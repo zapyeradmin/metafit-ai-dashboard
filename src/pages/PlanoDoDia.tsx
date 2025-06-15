@@ -233,8 +233,8 @@ const PlanoDoDia = () => {
             <TabsTrigger value="alimentacao">Alimentação</TabsTrigger>
           </TabsList>
 
+          {/* Aba TREINO: Apenas dados e componentes do Treino */}
           <TabsContent value="treino" className="space-y-6">
-            <MetabolicStats />
             <WorkoutSection 
               todayWorkout={todayWorkout}
               workoutExercises={workoutExercises}
@@ -242,12 +242,14 @@ const PlanoDoDia = () => {
             />
           </TabsContent>
 
+          {/* Aba ALIMENTAÇÃO: Apenas dados e componentes de Nutrição */}
           <TabsContent value="alimentacao" className="space-y-6">
             <NutritionStats meals={todayMeals} />
             <NutritionSection 
               todayMeals={todayMeals}
               onCompleteMeal={handleCompleteMeal}
             />
+            <MetabolicStats />
           </TabsContent>
         </Tabs>
 
