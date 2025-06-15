@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useProfile } from '../hooks/useProfile';
 import { useBodyMeasurements } from '../hooks/useBodyMeasurements';
@@ -25,6 +26,10 @@ const Index = () => {
   const { getTodayMeals, loading: nutritionLoading } = useNutrition();
   const { stats, loading: statsLoading } = useDashboardData();
 
+  // O hook realtime deve SEMPRE ser chamado,
+  // mesmo antes do return condicional!
+  useNotificationsRealtime(profile?.id);
+
   const latestMeasurement = getLatestMeasurement();
   const todayWorkout = getTodayWorkout();
   const todayMeals = getTodayMeals();
@@ -47,9 +52,6 @@ const Index = () => {
   };
 
   const nextWorkout = getNextWorkout();
-
-  // Use hook realtime após pegar o perfil:
-  useNotificationsRealtime(profile?.id);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -85,3 +87,4 @@ const Index = () => {
 };
 
 export default Index;
+
