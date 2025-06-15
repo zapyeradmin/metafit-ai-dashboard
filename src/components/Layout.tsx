@@ -60,8 +60,8 @@ const Layout = ({ children }: LayoutProps) => {
           <img
             src="/lovable-uploads/b0aaa10b-4f66-4468-86bb-c76e89ee01c9.png"
             alt="Logo MetaFit AI"
-            className="h-9 object-contain"
-            style={{ maxWidth: 170 }}
+            className="h-[50px] object-contain"
+            style={{ maxWidth: 238 }}
           />
         </div>
         <div className="flex flex-col flex-grow p-4 overflow-y-auto">
@@ -130,8 +130,8 @@ const Layout = ({ children }: LayoutProps) => {
                 <img
                   src="/lovable-uploads/b0aaa10b-4f66-4468-86bb-c76e89ee01c9.png"
                   alt="Logo MetaFit AI"
-                  className="ml-3 h-8 object-contain"
-                  style={{ maxWidth: 130 }}
+                  className="ml-3 h-[44px] object-contain"
+                  style={{ maxWidth: 182 }}
                 />
               </div>
               <div className="flex-1 flex justify-end">
@@ -170,8 +170,8 @@ const Layout = ({ children }: LayoutProps) => {
               <img
                 src="/lovable-uploads/b0aaa10b-4f66-4468-86bb-c76e89ee01c9.png"
                 alt="Logo MetaFit AI"
-                className="h-8 object-contain"
-                style={{ maxWidth: 130 }}
+                className="h-[44px] object-contain"
+                style={{ maxWidth: 182 }}
               />
               <button onClick={() => setIsSidebarOpen(false)}>
                 <i className="ri-close-line w-6 h-6 text-gray-500"></i>
