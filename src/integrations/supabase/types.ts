@@ -934,7 +934,14 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      dashboard_weekly_progress: {
+        Args: { p_user_id: string; p_start: string; p_end: string }
+        Returns: {
+          prog_date: string
+          workouts: number
+          meals: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
