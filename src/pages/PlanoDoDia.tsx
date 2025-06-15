@@ -13,6 +13,9 @@ import WorkoutPreferencesForm from "@/components/workouts/WorkoutPreferencesForm
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useGenerateWorkoutPlan } from "@/hooks/useGenerateWorkoutPlan";
+import { useProfile } from "@/hooks/useProfile";
+import { useUserWorkoutPreferences } from "@/hooks/useUserWorkoutPreferences";
+import { useToast } from "@/hooks/use-toast";
 
 const PlanoDoDia = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -20,6 +23,11 @@ const PlanoDoDia = () => {
 
   const { user } = useAuth();
   const { generate, loading: loadingGerarPlano } = useGenerateWorkoutPlan(user?.id);
+  const { toast } = useToast();
+
+  // 1. Carregar perfil e preferências
+  const { profile, loading: loadingProfile } = useProfile();
+  const { prefs, loading: loadingPrefs } = useUserWorkoutPreferences(user?.id);
 
   // Adaptação: fornecemos uma flag 'generating' p/ controller evitar criar treinos/refeições default
   const {
@@ -29,10 +37,40 @@ const PlanoDoDia = () => {
     todayMeals,
     handleCompleteExercise,
     handleCompleteMeal,
-    refetchAll // novo retorno do hook
+    refetchAll
   } = usePlanoDoDiaController(selectedDate, loadingGerarPlano, refreshKey);
 
-  if (loading) {
+  // 2. Função para checar perfil e preferências antes de gerar plano
+  const handleGeneratePlan = async () => {
+    if (loadingProfile || loadingPrefs) {
+      toast({
+        title: "Aguarde...",
+        description: "Carregando dados do perfil e preferências.",
+        variant: "default"
+      });
+      return;
+    }
+    if (!profile) {
+      toast({
+        title: "Complete seu perfil",
+        description: "Você precisa preencher seu perfil antes de gerar um plano. Acesse 'Meu Perfil' no menu.",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (!prefs) {
+      toast({
+        title: "Complete suas preferências de treino",
+        description: "Você precisa cadastrar as preferências de treino antes de gerar um plano. Role a página até a seção de 'Preferências de Treino'.",
+        variant: "destructive"
+      });
+      return;
+    }
+    await generate(selectedDate);
+    setRefreshKey(k => k + 1);
+  };
+
+  if (loading || loadingProfile || loadingPrefs) {
     return <LoadingSpinner />;
   }
 
@@ -67,12 +105,8 @@ const PlanoDoDia = () => {
           </div>
           {user && (
             <Button
-              onClick={async () => {
-                await generate(selectedDate);
-                // após gerar, força um refresh geral no controlador
-                setRefreshKey(k => k+1);
-              }}
-              disabled={loadingGerarPlano}
+              onClick={handleGeneratePlan}
+              disabled={loadingGerarPlano || loadingProfile || loadingPrefs}
               className="w-fit"
             >
               {loadingGerarPlano ? "Gerando plano..." : "Gerar Plano Automático (sobrescreve o existente)"}
