@@ -12,13 +12,24 @@ export function usePlanoDoDiaController(selectedDate: string) {
   const { meals, getTodayMeals, completeMeal, refetch: refetchMeals } = useNutrition();
   const { toast } = useToast();
 
+  // Logs úteis para diagnóstico
+  console.log('[PlanoDoDia] selectedDate:', selectedDate);
+  console.log('[PlanoDoDia] workouts:', workouts);
+  console.log('[PlanoDoDia] meals:', meals);
+
   // current day helpers
   const todayWorkout = getTodayWorkout();
   const todayMeals = getTodayMeals();
 
-  const fetchWorkoutExercises = useCallback(async () => {
-    if (!todayWorkout) return;
+  console.log('[PlanoDoDia] todayWorkout:', todayWorkout);
+  console.log('[PlanoDoDia] todayMeals:', todayMeals);
 
+  const fetchWorkoutExercises = useCallback(async () => {
+    if (!todayWorkout) {
+      console.log('[PlanoDoDia] fetchWorkoutExercises: no todayWorkout');
+      setWorkoutExercises([]);
+      return;
+    }
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -41,6 +52,7 @@ export function usePlanoDoDiaController(selectedDate: string) {
       }
 
       setWorkoutExercises(data || []);
+      console.log('[PlanoDoDia] workoutExercises:', data);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -56,7 +68,10 @@ export function usePlanoDoDiaController(selectedDate: string) {
   const createDefaultWorkout = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('[PlanoDoDia] createDefaultWorkout: no user');
+        return;
+      }
 
       setLoading(true);
 
@@ -74,6 +89,11 @@ export function usePlanoDoDiaController(selectedDate: string) {
 
       if (workoutError) {
         console.error('Error creating workout:', workoutError);
+        toast({
+          title: "Erro",
+          description: "Erro ao criar treino",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -120,7 +140,10 @@ export function usePlanoDoDiaController(selectedDate: string) {
   const createDefaultMeals = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('[PlanoDoDia] createDefaultMeals: no user');
+        return;
+      }
 
       setLoading(true);
 
@@ -212,3 +235,5 @@ export function usePlanoDoDiaController(selectedDate: string) {
     handleCompleteMeal,
   };
 }
+
+// Arquivo está ficando muito grande. Considere pedir para refatorar em arquivos menores.

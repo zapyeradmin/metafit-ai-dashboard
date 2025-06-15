@@ -31,6 +31,27 @@ const PlanoDoDia = () => {
     return <LoadingSpinner />;
   }
 
+  // Adiciona verificação e mensagens para dados faltantes/erro
+  if (!todayWorkout) {
+    return (
+      <div className="p-4">
+        <div className="bg-yellow-50 text-yellow-800 border border-yellow-200 p-4 rounded">
+          Nenhum treino encontrado ou ocorreu um erro ao carregar o treino de hoje.
+        </div>
+      </div>
+    );
+  }
+
+  if (!todayMeals || todayMeals.length === 0) {
+    return (
+      <div className="p-4">
+        <div className="bg-yellow-50 text-yellow-800 border border-yellow-200 p-4 rounded">
+          Nenhuma refeição encontrada ou ocorreu um erro ao carregar as refeições de hoje.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
@@ -89,4 +110,3 @@ const PlanoDoDia = () => {
 };
 
 export default PlanoDoDia;
-
