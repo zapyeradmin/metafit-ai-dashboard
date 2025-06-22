@@ -967,13 +967,17 @@ export type Database = {
           available_equipment: string[]
           created_at: string
           current_plan_week: number | null
+          data_inicio_treino_atual: string | null
           experience_level: string
           focus_areas: string[] | null
           id: string
           injury_considerations: string[] | null
           last_plan_generated: string | null
+          objetivo_atual: string | null
+          semanas_completadas_no_treino_atual: number | null
           time_per_session: number
           training_days_per_week: number
+          treino_atual_id: string | null
           updated_at: string
           user_id: string
         }
@@ -981,13 +985,17 @@ export type Database = {
           available_equipment: string[]
           created_at?: string
           current_plan_week?: number | null
+          data_inicio_treino_atual?: string | null
           experience_level: string
           focus_areas?: string[] | null
           id?: string
           injury_considerations?: string[] | null
           last_plan_generated?: string | null
+          objetivo_atual?: string | null
+          semanas_completadas_no_treino_atual?: number | null
           time_per_session: number
           training_days_per_week: number
+          treino_atual_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -995,19 +1003,64 @@ export type Database = {
           available_equipment?: string[]
           created_at?: string
           current_plan_week?: number | null
+          data_inicio_treino_atual?: string | null
           experience_level?: string
           focus_areas?: string[] | null
           id?: string
           injury_considerations?: string[] | null
           last_plan_generated?: string | null
+          objetivo_atual?: string | null
+          semanas_completadas_no_treino_atual?: number | null
           time_per_session?: number
           training_days_per_week?: number
+          treino_atual_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "user_workout_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      user_workout_progress: {
+        Row: {
+          completado: boolean | null
+          created_at: string
+          data_fim: string | null
+          data_inicio: string
+          id: string
+          semana: number
+          treino_id: string
+          user_id: string
+        }
+        Insert: {
+          completado?: boolean | null
+          created_at?: string
+          data_fim?: string | null
+          data_inicio: string
+          id?: string
+          semana: number
+          treino_id: string
+          user_id: string
+        }
+        Update: {
+          completado?: boolean | null
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          id?: string
+          semana?: number
+          treino_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_workout_progress_user"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -1108,6 +1161,45 @@ export type Database = {
           type?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      workout_progression_logic: {
+        Row: {
+          arquivo: string
+          created_at: string
+          descricao: string | null
+          duracao_semanas: number
+          id: string
+          nivel: string
+          objetivo: string
+          proximo_treino_id: string | null
+          treino_id: string
+          updated_at: string
+        }
+        Insert: {
+          arquivo: string
+          created_at?: string
+          descricao?: string | null
+          duracao_semanas: number
+          id?: string
+          nivel: string
+          objetivo: string
+          proximo_treino_id?: string | null
+          treino_id: string
+          updated_at?: string
+        }
+        Update: {
+          arquivo?: string
+          created_at?: string
+          descricao?: string | null
+          duracao_semanas?: number
+          id?: string
+          nivel?: string
+          objetivo?: string
+          proximo_treino_id?: string | null
+          treino_id?: string
+          updated_at?: string
         }
         Relationships: []
       }

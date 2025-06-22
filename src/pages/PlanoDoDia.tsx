@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DateSelector from '@/components/plano-do-dia/DateSelector';
@@ -7,45 +8,35 @@ import DailySummary from '@/components/plano-do-dia/DailySummary';
 import LoadingSpinner from '@/components/plano-do-dia/LoadingSpinner';
 import MetabolicStats from '@/components/plano-do-dia/MetabolicStats';
 import NutritionStats from '@/components/plano-do-dia/NutritionStats';
+import WorkoutProgressionCard from '@/components/workouts/WorkoutProgressionCard';
 import { usePlanoDoDiaController } from '@/hooks/usePlanoDoDiaController';
 import WorkoutPreferencesForm from "@/components/workouts/WorkoutPreferencesForm";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { useGenerateWorkoutPlan } from "@/hooks/useGenerateWorkoutPlan";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserWorkoutPreferences } from "@/hooks/useUserWorkoutPreferences";
 import { useToast } from "@/hooks/use-toast";
 import WorkoutPreferencesHistoryTable from "@/components/workouts/WorkoutPreferencesHistoryTable";
 import NutritionPreferencesForm from "@/components/nutrition/NutritionPreferencesForm";
 import NutritionPreferencesHistoryTable from "@/components/nutrition/NutritionPreferencesHistoryTable";
-import NutritionPrefsDetailsModal from "@/components/nutrition/NutritionPrefsDetailsModal";
 import { useUserNutritionPreferences } from "@/hooks/useUserNutritionPreferences";
 
 const PlanoDoDia = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [refreshKey, setRefreshKey] = useState(0);
-
   const [formVisible, setFormVisible] = useState(false);
-
-  // Novo: Visibilidade do formulário de preferências de alimentação
   const [nutritionFormVisible, setNutritionFormVisible] = useState(false);
 
   const { user } = useAuth();
-  const { generate, loading: loadingGerarPlano } = useGenerateWorkoutPlan(user?.id);
   const { toast } = useToast();
 
   // Carregar perfil e preferências
   const { profile, loading: loadingProfile } = useProfile();
   const { history, addPreference, loading: loadingPrefs } = useUserWorkoutPreferences(user?.id);
-
-  // Novo: Nutrição
   const { history: nutritionHistory, addPreference: addNutritionPref, loading: loadingNutritionPrefs } = useUserNutritionPreferences(user?.id);
 
   // Nova flag: só permite criar treino/refeição auto se perfil e prefs existem
-  // Removido "prefs" pois não existe mais
   const allowAutoCreate = !!profile && history && history.length > 0;
 
-  // Adaptação: fornecemos a flag allowAutoCreate
   const {
     workoutExercises,
     loading,
@@ -54,9 +45,7 @@ const PlanoDoDia = () => {
     handleCompleteExercise,
     handleCompleteMeal,
     refetchAll
-  } = usePlanoDoDiaController(selectedDate, loadingGerarPlano, refreshKey, allowAutoCreate);
-
-  // Removido botão Gerar Plano Automático
+  } = usePlanoDoDiaController(selectedDate, false, refreshKey, allowAutoCreate);
 
   if (loading || loadingProfile || loadingPrefs || loadingNutritionPrefs) {
     return <LoadingSpinner />;
@@ -105,6 +94,9 @@ const PlanoDoDia = () => {
           </TabsList>
 
           <TabsContent value="treino" className="space-y-6">
+            {/* Novo componente de progressão */}
+            <WorkoutProgressionCard />
+
             {user && (
               <div className="mb-8">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
