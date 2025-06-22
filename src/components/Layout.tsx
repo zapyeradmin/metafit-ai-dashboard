@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -58,6 +59,7 @@ const Layout = ({ children }: LayoutProps) => {
   // Apenas super admin vê o link
   if (user?.email === "marciliobarros2010@gmail.com") {
     menuItems.push({ icon: "ri-settings-3-line", label: "Administração", path: "/admin" });
+    menuItems.push({ icon: "ri-file-text-line", label: "Templates", path: "/templates-admin" });
   }
 
   return (

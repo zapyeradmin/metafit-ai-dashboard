@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +17,7 @@ import Configuracoes from "./pages/Configuracoes";
 import MeuPerfil from "./pages/MeuPerfil";
 import NotFound from "./pages/NotFound";
 import AdminPage from "./pages/Admin";
+import TemplatesAdmin from "./pages/TemplatesAdmin";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +51,7 @@ const AppContent = () => {
         <Route path="/configuracoes" element={<Layout><Configuracoes /></Layout>} />
         <Route path="/meu-perfil" element={<Layout><MeuPerfil /></Layout>} />
         <Route path="/admin" element={<Layout><AdminPage /></Layout>} />
+        <Route path="/templates-admin" element={<Layout><TemplatesAdmin /></Layout>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

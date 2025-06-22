@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,19 +13,13 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
+    const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // URLs dos templates
-    const templateUrls = [
+    // Lista de todos os templates a serem processados
+    const templateFiles = [
       'workout_core_mobilidade_1.md',
       'workout_core_mobilidade_avancado.md',
       'workout_emagrecimento_avancado_1.md',
@@ -34,247 +28,179 @@ serve(async (req) => {
       'workout_emagrecimento_avancado_inferiores_2.md',
       'workout_emagrecimento_avancado_inferiores_elite.md',
       'workout_emagrecimento_iniciante_1.md',
-      'workout_emagrecimento_iniciante_2.md',
       'workout_emagrecimento_intermediario_1.md',
       'workout_emagrecimento_intermediario_2.md',
       'workout_emagrecimento_ultra_avancado_1.md',
       'workout_emagrecimento_ultra_avancado_elite_2.md'
     ]
 
-    const baseUrl = 'https://zdmxtmihlqukfgtdjrce.supabase.co/storage/v1/object/public/workout-templates-training/'
+    // Primeiro, carregar a lógica de processamento
+    const logicUrl = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/workout-templates-training/logica_de_processamento_dos_treinos.JSON`
+    const logicResponse = await fetch(logicUrl)
     
-    console.log('Iniciando processamento dos templates...')
-
-    // Buscar a lógica de processamento
-    const logicResponse = await fetch(`${baseUrl}logica_de_processamento_dos_treinos.JSON`)
-    let processingLogic = null
-    try {
-      processingLogic = await logicResponse.json()
-      console.log('Lógica de processamento carregada:', processingLogic)
-    } catch (error) {
-      console.log('Erro ao carregar lógica de processamento:', error)
+    if (!logicResponse.ok) {
+      throw new Error(`Erro ao carregar lógica: ${logicResponse.status}`)
     }
+    
+    const logic = await logicResponse.json()
+    console.log('Lógica carregada:', logic)
+
+    let processedCount = 0
+    const templates = []
 
     // Processar cada template
-    const processedTemplates = []
-    
-    for (const templateFile of templateUrls) {
+    for (const fileName of templateFiles) {
       try {
-        console.log(`Processando template: ${templateFile}`)
+        const fileUrl = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/workout-templates-training/${fileName}`
+        const response = await fetch(fileUrl)
         
-        const response = await fetch(`${baseUrl}${templateFile}`)
         if (!response.ok) {
-          console.log(`Erro ao buscar ${templateFile}: ${response.status}`)
+          console.log(`Arquivo não encontrado: ${fileName}`)
           continue
         }
-        
+
         const content = await response.text()
+        const parsedTemplate = parseMarkdownTemplate(content, fileName)
         
-        // Extrair informações do nome do arquivo
-        const fileInfo = extractFileInfo(templateFile)
-        
-        // Processar o conteúdo markdown
-        const structure = parseMarkdownToStructure(content)
-        
-        // Criar objeto do template
-        const template = {
-          template_name: fileInfo.name,
-          goal: fileInfo.goal,
-          experience_level: fileInfo.level,
-          training_days_per_week: extractTrainingDays(content),
-          focus_areas: extractFocusAreas(content),
-          structure: structure
+        if (parsedTemplate) {
+          templates.push(parsedTemplate)
+          console.log(`Template processado: ${fileName}`)
+          processedCount++
         }
-        
-        processedTemplates.push(template)
-        console.log(`Template processado: ${template.template_name}`)
-        
       } catch (error) {
-        console.error(`Erro ao processar ${templateFile}:`, error)
+        console.error(`Erro ao processar ${fileName}:`, error)
       }
     }
 
     // Inserir templates no banco
-    if (processedTemplates.length > 0) {
-      const { data, error } = await supabase
+    if (templates.length > 0) {
+      const { error: insertError } = await supabaseClient
         .from('workout_templates')
-        .upsert(processedTemplates, { onConflict: 'template_name' })
+        .upsert(templates, { 
+          onConflict: 'template_name',
+          ignoreDuplicates: false 
+        })
 
-      if (error) {
-        console.error('Erro ao inserir templates:', error)
-        throw error
+      if (insertError) {
+        console.error('Erro ao inserir templates:', insertError)
+        throw insertError
       }
-
-      console.log(`${processedTemplates.length} templates inseridos com sucesso`)
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      templatesProcessed: processedTemplates.length,
-      templates: processedTemplates.map(t => ({ name: t.template_name, goal: t.goal, level: t.experience_level }))
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
+    return new Response(
+      JSON.stringify({
+        message: 'Templates processados com sucesso',
+        templatesProcessed: processedCount,
+        templates: templates.map(t => ({ name: t.template_name, goal: t.goal, level: t.experience_level }))
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
+      }
+    )
 
   } catch (error) {
     console.error('Erro no processamento:', error)
-    return new Response(JSON.stringify({
-      success: false,
-      error: error.message
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500
-    })
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
+      }
+    )
   }
 })
 
-function extractFileInfo(filename: string) {
-  const name = filename.replace('.md', '').replace('workout_', '')
-  
-  let goal = 'geral'
-  let level = 'iniciante'
-  
-  if (name.includes('emagrecimento')) {
-    goal = 'emagrecimento'
-  } else if (name.includes('hipertrofia')) {
-    goal = 'hipertrofia'
-  } else if (name.includes('core')) {
-    goal = 'core_mobilidade'
-  }
-  
-  if (name.includes('iniciante')) {
-    level = 'iniciante'
-  } else if (name.includes('intermediario')) {
-    level = 'intermediario'
-  } else if (name.includes('avancado') && !name.includes('ultra')) {
-    level = 'avançado'
-  } else if (name.includes('ultra') || name.includes('elite')) {
-    level = 'elite'
-  }
-  
-  return { name, goal, level }
-}
-
-function extractTrainingDays(content: string): number {
-  // Buscar por padrões que indiquem dias de treino
-  const patterns = [
-    /(\d+)\s*dias?\s*por\s*semana/i,
-    /(\d+)\s*vezes?\s*por\s*semana/i,
-    /treino\s*(\d+)x/i
-  ]
-  
-  for (const pattern of patterns) {
-    const match = content.match(pattern)
-    if (match) {
-      return parseInt(match[1])
-    }
-  }
-  
-  // Default baseado no conteúdo
-  const dayMatches = content.match(/##\s*(segunda|terça|quarta|quinta|sexta|sábado|domingo)/gi)
-  return dayMatches ? Math.min(dayMatches.length, 6) : 5
-}
-
-function extractFocusAreas(content: string): string[] {
-  const areas = []
-  
-  if (content.toLowerCase().includes('superior')) areas.push('superiores')
-  if (content.toLowerCase().includes('inferior')) areas.push('inferiores')
-  if (content.toLowerCase().includes('core')) areas.push('core')
-  if (content.toLowerCase().includes('cardio')) areas.push('cardio')
-  if (content.toLowerCase().includes('força')) areas.push('força')
-  
-  return areas.length > 0 ? areas : ['equilibrado']
-}
-
-function parseMarkdownToStructure(content: string) {
-  const lines = content.split('\n')
-  const structure = {
-    semanas: [{
-      dias: []
-    }]
-  }
-  
-  let currentDay = null
-  let currentExercises = []
-  
-  for (const line of lines) {
-    const trimmed = line.trim()
+function parseMarkdownTemplate(content: string, fileName: string) {
+  try {
+    // Extrair metadados do nome do arquivo
+    const nameParts = fileName.replace('.md', '').split('_')
+    let goal = 'geral'
+    let level = 'iniciante'
     
-    // Detectar cabeçalhos de dias
-    if (trimmed.match(/^##\s*(segunda|terça|quarta|quinta|sexta|sábado)/i)) {
-      // Salvar dia anterior se existir
-      if (currentDay) {
-        structure.semanas[0].dias.push({
-          ...currentDay,
-          exercicios: currentExercises
-        })
+    if (nameParts.includes('emagrecimento')) goal = 'emagrecimento'
+    if (nameParts.includes('hipertrofia')) goal = 'hipertrofia'
+    if (nameParts.includes('core') || nameParts.includes('mobilidade')) goal = 'core_mobilidade'
+    
+    if (nameParts.includes('iniciante')) level = 'iniciante'
+    if (nameParts.includes('intermediario')) level = 'intermediario'
+    if (nameParts.includes('avancado')) level = 'avançado'
+    if (nameParts.includes('elite')) level = 'elite'
+
+    // Parsing básico do conteúdo markdown
+    const lines = content.split('\n')
+    let currentSection = ''
+    let structure = { semanas: [{ dias: [] }] }
+    let currentDay = null
+    let trainingDays = 0
+    let focusAreas = []
+
+    for (const line of lines) {
+      const trimmedLine = line.trim()
+      
+      if (trimmedLine.startsWith('# ')) {
+        currentSection = trimmedLine.substring(2)
       }
       
-      // Iniciar novo dia
-      const dayName = trimmed.replace(/^##\s*/, '').replace(':', '').trim()
-      currentDay = {
-        nome: dayName,
-        grupos_musculares: extractMuscleGroups(trimmed),
-        data: new Date().toISOString().split('T')[0]
+      if (trimmedLine.startsWith('## Dia ') || trimmedLine.startsWith('**Dia ')) {
+        if (currentDay) {
+          structure.semanas[0].dias.push(currentDay)
+        }
+        
+        currentDay = {
+          dia: trimmedLine.replace(/[#*]/g, '').trim(),
+          nome: trimmedLine.replace(/[#*]/g, '').trim(),
+          grupos_musculares: [],
+          exercicios: []
+        }
+        trainingDays++
       }
-      currentExercises = []
+      
+      if (trimmedLine.includes('**Grupos Musculares:**') || trimmedLine.includes('**Foco:**')) {
+        const nextLineIndex = lines.indexOf(line) + 1
+        if (nextLineIndex < lines.length) {
+          const muscleGroups = lines[nextLineIndex].trim().split(',').map(g => g.trim())
+          if (currentDay) {
+            currentDay.grupos_musculares = muscleGroups
+          }
+          focusAreas = [...focusAreas, ...muscleGroups]
+        }
+      }
+      
+      if (trimmedLine.match(/^\d+\.\s/)) {
+        const exerciseName = trimmedLine.replace(/^\d+\.\s/, '').split(':')[0].trim()
+        const exerciseDetails = trimmedLine.includes(':') ? trimmedLine.split(':')[1].trim() : ''
+        
+        if (currentDay) {
+          currentDay.exercicios.push({
+            nome: exerciseName,
+            series: 3,
+            repeticoes: '10-12',
+            descanso: 60,
+            observacoes: exerciseDetails
+          })
+        }
+      }
     }
     
-    // Detectar exercícios (linhas com números ou bullets)
-    else if (trimmed.match(/^\d+\.|\*\s*\w+|^\-\s*\w+/) && !trimmed.toLowerCase().includes('descanso')) {
-      const exercise = parseExerciseLine(trimmed)
-      if (exercise) {
-        currentExercises.push(exercise)
-      }
+    if (currentDay) {
+      structure.semanas[0].dias.push(currentDay)
     }
-  }
-  
-  // Adicionar último dia
-  if (currentDay) {
-    structure.semanas[0].dias.push({
-      ...currentDay,
-      exercicios: currentExercises
-    })
-  }
-  
-  return structure
-}
 
-function extractMuscleGroups(dayHeader: string): string[] {
-  const groups = []
-  const header = dayHeader.toLowerCase()
-  
-  if (header.includes('peito')) groups.push('peito')
-  if (header.includes('costas')) groups.push('costas')
-  if (header.includes('perna')) groups.push('pernas')
-  if (header.includes('ombro')) groups.push('ombros')
-  if (header.includes('braço') || header.includes('bíceps') || header.includes('tríceps')) groups.push('braços')
-  if (header.includes('core') || header.includes('abdômen')) groups.push('core')
-  
-  return groups.length > 0 ? groups : ['geral']
-}
+    return {
+      template_name: fileName.replace('.md', ''),
+      goal,
+      experience_level: level,
+      training_days_per_week: Math.min(trainingDays, 7),
+      focus_areas: [...new Set(focusAreas)].slice(0, 5),
+      structure
+    }
 
-function parseExerciseLine(line: string) {
-  // Remove numeração e bullets
-  let exerciseName = line.replace(/^\d+\.|\*|\-/, '').trim()
-  
-  // Extrair séries e repetições
-  let series = 3
-  let repeticoes = 12
-  
-  const seriesMatch = exerciseName.match(/(\d+)\s*x\s*(\d+)/i)
-  if (seriesMatch) {
-    series = parseInt(seriesMatch[1])
-    repeticoes = parseInt(seriesMatch[2])
-    exerciseName = exerciseName.replace(/\d+\s*x\s*\d+/i, '').trim()
-  }
-  
-  if (exerciseName.length < 3) return null
-  
-  return {
-    nome: exerciseName,
-    series: series,
-    repeticoes: repeticoes
+  } catch (error) {
+    console.error(`Erro ao fazer parse do template ${fileName}:`, error)
+    return null
   }
 }
