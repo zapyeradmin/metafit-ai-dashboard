@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { UserWorkoutPrefs } from "@/hooks/useUserWorkoutPreferences";
+import { UserWorkoutPreferences } from "@/hooks/useUserWorkoutPreferences";
 import { Button } from "@/components/ui/button";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -13,11 +13,11 @@ if (typeof window !== "undefined") {
 }
 
 interface Props {
-  history?: UserWorkoutPrefs[];
+  history?: UserWorkoutPreferences[];
   loading: boolean;
 }
 
-function exportWorkoutPrefsPdf(data: UserWorkoutPrefs) {
+function exportWorkoutPrefsPdf(data: UserWorkoutPreferences) {
   const doc = new jsPDF();
   doc.setFontSize(14);
   doc.text("Histórico de Preferências de Treino", 14, 14);
@@ -30,6 +30,7 @@ function exportWorkoutPrefsPdf(data: UserWorkoutPrefs) {
   const rows = [
     { campo: "Data", valor: data.created_at ? new Date(data.created_at).toLocaleString("pt-BR") : "-" },
     { campo: "Nível", valor: data.experience_level ?? "-" },
+    { campo: "Objetivo", valor: data.objetivo_atual ?? "-" },
     { campo: "Dias/semana", valor: data.training_days_per_week ?? "-" },
     { campo: "Tempo/sessão", valor: data.time_per_session ?? "-" },
     { campo: "Equipamentos", valor: data.available_equipment?.join(", ") || "-" },
@@ -53,9 +54,9 @@ function exportWorkoutPrefsPdf(data: UserWorkoutPrefs) {
 
 const WorkoutPreferencesHistoryTable: React.FC<Props> = ({ history = [], loading }) => {
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedPrefs, setSelectedPrefs] = useState<UserWorkoutPrefs | null>(null);
+  const [selectedPrefs, setSelectedPrefs] = useState<UserWorkoutPreferences | null>(null);
 
-  const handleView = (prefs: UserWorkoutPrefs) => {
+  const handleView = (prefs: UserWorkoutPreferences) => {
     setSelectedPrefs(prefs);
     setModalOpen(true);
   };
@@ -73,6 +74,7 @@ const WorkoutPreferencesHistoryTable: React.FC<Props> = ({ history = [], loading
             <tr>
               <th className="pr-2 py-1 text-left">Data</th>
               <th className="pr-2 py-1 text-left">Nível</th>
+              <th className="pr-2 py-1 text-left">Objetivo</th>
               <th className="pr-2 py-1 text-left">Dias/Semana</th>
               <th className="pr-2 py-1 text-left">Tempo/Sessão</th>
               <th className="pr-2 py-1 text-left">Áreas de foco</th>
@@ -84,6 +86,7 @@ const WorkoutPreferencesHistoryTable: React.FC<Props> = ({ history = [], loading
               <tr key={h.id}>
                 <td className="pr-2 py-1">{h.created_at ? new Date(h.created_at).toLocaleString("pt-BR") : "-"}</td>
                 <td className="pr-2 py-1">{h.experience_level ?? "-"}</td>
+                <td className="pr-2 py-1">{h.objetivo_atual ?? "-"}</td>
                 <td className="pr-2 py-1">{h.training_days_per_week ?? "-"}</td>
                 <td className="pr-2 py-1">{h.time_per_session ?? "-"}</td>
                 <td className="pr-2 py-1">{h.focus_areas?.join(", ") ?? "-"}</td>

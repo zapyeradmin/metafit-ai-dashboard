@@ -1,12 +1,12 @@
 
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { UserWorkoutPrefs } from "@/hooks/useUserWorkoutPreferences";
+import { UserWorkoutPreferences } from "@/hooks/useUserWorkoutPreferences";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  prefs: UserWorkoutPrefs | null;
+  prefs: UserWorkoutPreferences | null;
 }
 
 const WorkoutPrefsDetailsModal: React.FC<Props> = ({ open, onOpenChange, prefs }) => {
@@ -16,6 +16,10 @@ const WorkoutPrefsDetailsModal: React.FC<Props> = ({ open, onOpenChange, prefs }
     { label: "ID", value: prefs.id },
     { label: "Data", value: prefs.created_at ? new Date(prefs.created_at).toLocaleString("pt-BR") : "-" },
     { label: "Nível", value: prefs.experience_level ?? "-" },
+    { label: "Objetivo", value: prefs.objetivo_atual ?? "-" },
+    { label: "Treino Atual ID", value: prefs.treino_atual_id ?? "-" },
+    { label: "Semanas Completadas", value: prefs.semanas_completadas_no_treino_atual ?? "-" },
+    { label: "Data Início Treino", value: prefs.data_inicio_treino_atual ? new Date(prefs.data_inicio_treino_atual).toLocaleString("pt-BR") : "-" },
     { label: "Dias/semana", value: prefs.training_days_per_week ?? "-" },
     { label: "Tempo/sessão (min)", value: prefs.time_per_session ?? "-" },
     { label: "Equipamentos", value: prefs.available_equipment?.join(", ") || "-" },

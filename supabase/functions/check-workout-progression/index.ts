@@ -48,7 +48,7 @@ serve(async (req) => {
     }
 
     if (!trilhaCompleta || trilhaCompleta.length === 0) {
-      return new Response JSON.stringify({
+      return new Response(JSON.stringify({
         status: 'ERRO',
         message: `Trilha para objetivo "${objetivo_usuario}" não encontrada.`
       }), {

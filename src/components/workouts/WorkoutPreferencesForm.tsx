@@ -1,10 +1,10 @@
 
 // Refeito como formulário controlado
 import React, { useState } from "react";
-import { UserWorkoutPrefs } from "@/hooks/useUserWorkoutPreferences";
+import { WorkoutPreferencesFormData } from "@/hooks/useUserWorkoutPreferences";
 
 interface Props {
-  onSave: (data: Omit<UserWorkoutPrefs, "id" | "created_at" | "updated_at">) => Promise<boolean>;
+  onSave: (data: WorkoutPreferencesFormData) => Promise<boolean>;
   onCancel: () => void;
   loading: boolean;
 }
@@ -21,19 +21,26 @@ const equipamentos = [
 
 const focusList = ["Peito", "Costas", "Pernas", "Ombros", "Bíceps", "Tríceps", "Core"];
 
+const objetivos = [
+  { value: "emagrecimento", label: "Emagrecimento" },
+  { value: "hipertrofia", label: "Hipertrofia" },
+  { value: "core_mobilidade", label: "Core e Mobilidade" }
+];
+
 const WorkoutPreferencesForm: React.FC<Props> = ({ onSave, onCancel, loading }) => {
-  const [form, setForm] = useState<any>({
+  const [form, setForm] = useState<WorkoutPreferencesFormData>({
     experience_level: '',
     available_equipment: [],
     training_days_per_week: 3,
     time_per_session: 60,
     injury_considerations: [],
-    focus_areas: []
+    focus_areas: [],
+    objetivo_atual: ''
   });
   const [saving, setSaving] = useState(false);
 
-  const handleChange = (field: string, value: any) => {
-    setForm((f: any) => ({ ...f, [field]: value }));
+  const handleChange = (field: keyof WorkoutPreferencesFormData, value: any) => {
+    setForm((f) => ({ ...f, [field]: value }));
   };
 
   return (
@@ -52,6 +59,13 @@ const WorkoutPreferencesForm: React.FC<Props> = ({ onSave, onCancel, loading }) 
         <select className="w-full mt-1" value={form.experience_level} onChange={e => handleChange("experience_level", e.target.value)}>
           <option value="">Selecione</option>
           {levels.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+        </select>
+      </div>
+      <div>
+        <label>Objetivo:</label>
+        <select className="w-full mt-1" value={form.objetivo_atual || ''} onChange={e => handleChange("objetivo_atual", e.target.value)}>
+          <option value="">Selecione</option>
+          {objetivos.map(obj => <option key={obj.value} value={obj.value}>{obj.label}</option>)}
         </select>
       </div>
       <div>
