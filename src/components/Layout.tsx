@@ -48,6 +48,7 @@ const Layout = ({ children }: LayoutProps) => {
   const menuItems = [
     { icon: 'ri-dashboard-line', label: 'Dashboard', path: '/' },
     { icon: 'ri-calendar-line', label: 'Plano do Dia', path: '/plano-do-dia' },
+    { icon: 'ri-dumbbell-line', label: 'Meus Treinos', path: '/meus-treinos' },
     { icon: 'ri-line-chart-line', label: 'Meu Progresso', path: '/meu-progresso' },
     { icon: 'ri-shield-star-line', label: 'Dashboard PRO', path: '/dashboard-pro' },
     { icon: 'ri-file-list-3-line', label: 'Meus Dados', path: '/meus-dados' },

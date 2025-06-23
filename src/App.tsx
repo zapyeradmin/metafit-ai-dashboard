@@ -15,6 +15,7 @@ import MeusDados from "./pages/MeusDados";
 import AssistenteIA from "./pages/AssistenteIA";
 import Configuracoes from "./pages/Configuracoes";
 import MeuPerfil from "./pages/MeuPerfil";
+import MeusTreinos from "./pages/MeusTreinos";
 import NotFound from "./pages/NotFound";
 import AdminPage from "./pages/Admin";
 import TemplatesAdmin from "./pages/TemplatesAdmin";
@@ -44,6 +45,7 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Layout><Index /></Layout>} />
         <Route path="/plano-do-dia" element={<Layout><PlanoDoDia /></Layout>} />
+        <Route path="/meus-treinos" element={<Layout><MeusTreinos /></Layout>} />
         <Route path="/meu-progresso" element={<Layout><MeuProgresso /></Layout>} />
         <Route path="/dashboard-pro" element={<Layout><DashboardPro /></Layout>} />
         <Route path="/meus-dados" element={<Layout><MeusDados /></Layout>} />
