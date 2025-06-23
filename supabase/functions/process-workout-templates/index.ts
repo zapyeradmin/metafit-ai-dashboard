@@ -55,6 +55,8 @@ serve(async (req) => {
         } catch (parseError) {
           console.log('Arquivo de lógica não é JSON válido, continuando sem ele:', parseError.message)
         }
+      } else {
+        console.log('Arquivo de lógica não encontrado, continuando sem ele')
       }
     } catch (error) {
       console.log('Erro ao carregar lógica (continuando sem ela):', error.message)
@@ -78,12 +80,12 @@ serve(async (req) => {
         
         const parsedTemplate = parseMarkdownTemplate(content, fileName)
         
-        if (parsedTemplate) {
+        if (parsedTemplate && parsedTemplate.structure?.semanas?.[0]?.dias?.length > 0) {
           templates.push(parsedTemplate)
           console.log(`Template processado com sucesso: ${fileName}`)
           processedCount++
         } else {
-          console.log(`Falha ao processar template: ${fileName}`)
+          console.log(`Template não processado (sem dias válidos): ${fileName}`)
         }
       } catch (error) {
         console.error(`Erro ao processar ${fileName}:`, error.message)
@@ -94,34 +96,39 @@ serve(async (req) => {
     if (templates.length > 0) {
       console.log(`Inserindo ${templates.length} templates no banco...`)
       
-      const { data, error: insertError } = await supabaseClient
-        .from('workout_templates')
-        .upsert(templates, { 
-          onConflict: 'template_name',
-          ignoreDuplicates: false 
-        })
-        .select()
+      try {
+        // Usar upsert agora que temos o constraint único
+        const { data, error: insertError } = await supabaseClient
+          .from('workout_templates')
+          .upsert(templates, { 
+            onConflict: 'template_name'
+          })
+          .select()
 
-      if (insertError) {
-        console.error('Erro ao inserir templates:', insertError)
-        throw insertError
+        if (insertError) {
+          console.error('Erro ao inserir templates:', insertError)
+          throw insertError
+        }
+
+        console.log(`${data?.length || 0} templates inseridos/atualizados com sucesso`)
+      } catch (dbError) {
+        console.error('Erro de banco de dados:', dbError)
+        throw dbError
       }
-
-      console.log(`Templates inseridos com sucesso:`, data?.length)
     }
 
     return new Response(
       JSON.stringify({
-        message: 'Processamento concluído',
+        message: 'Processamento concluído com sucesso',
         templatesProcessed: processedCount,
+        templatesValid: templates.length,
         logicProcessed,
         templates: templates.map(t => ({ 
           nome: t.template_name, 
           objetivo: t.goal, 
           nivel: t.experience_level,
-          dias: t.training_days_per_week 
-        })),
-        details: processedCount === 0 ? 'Nenhum template foi processado com sucesso' : undefined
+          dias: t.structure?.semanas?.[0]?.dias?.length || 0
+        }))
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -165,7 +172,7 @@ function parseMarkdownTemplate(content: string, fileName: string) {
     if (nameParts.includes('avancado')) level = 'avançado'
     if (nameParts.includes('elite')) level = 'elite'
 
-    // Parsing do conteúdo markdown
+    // Parsing do conteúdo markdown com melhoria na detecção de dias
     const lines = content.split('\n')
     let structure = { semanas: [{ dias: [] }] }
     let currentDay = null
@@ -176,10 +183,10 @@ function parseMarkdownTemplate(content: string, fileName: string) {
       const line = lines[i]
       const trimmedLine = line.trim()
       
-      // Detectar início de um novo dia
-      if (trimmedLine.match(/^(##+\s*)?(\*\*)?Dia\s+\d+/i) || 
-          trimmedLine.match(/^(##+\s*)?(\*\*)?Segunda|Terça|Quarta|Quinta|Sexta|Sábado|Domingo/i)) {
-        
+      // Melhorar detecção de dias com regex mais abrangente
+      const dayMatch = trimmedLine.match(/^(#{1,4}\s*)?(\*{1,2})?(?:Dia\s+\d+|Segunda|Terça|Quarta|Quinta|Sexta|Sábado|Domingo|TREINO|Treino)\b/i)
+      
+      if (dayMatch) {
         // Salvar dia anterior se existir
         if (currentDay && currentDay.exercicios.length > 0) {
           structure.semanas[0].dias.push(currentDay)
@@ -193,11 +200,12 @@ function parseMarkdownTemplate(content: string, fileName: string) {
           exercicios: []
         }
         trainingDays++
+        console.log(`Novo dia detectado: ${currentDay.nome}`)
         continue
       }
       
-      // Detectar grupos musculares
-      if (trimmedLine.match(/grupos?\s+musculares?|foco/i) && trimmedLine.includes(':')) {
+      // Detectar grupos musculares com regex mais flexível
+      if (trimmedLine.match(/(grupos?\s+musculares?|foco|músculo)/i) && trimmedLine.includes(':')) {
         const groupsText = trimmedLine.split(':')[1]?.trim()
         if (groupsText && currentDay) {
           const muscleGroups = groupsText.split(/[,;]/).map(g => g.trim()).filter(g => g.length > 0)
@@ -207,24 +215,41 @@ function parseMarkdownTemplate(content: string, fileName: string) {
         continue
       }
       
-      // Detectar exercícios (linhas que começam com número ou bullet)
-      if (trimmedLine.match(/^\d+[\.\)]\s+/) || trimmedLine.match(/^[-*]\s+\w/)) {
-        if (currentDay) {
-          const exerciseText = trimmedLine.replace(/^\d+[\.\)]\s*/, '').replace(/^[-*]\s*/, '')
-          const exerciseParts = exerciseText.split(/[:;]/)
+      // Detectar exercícios com regex mais abrangente
+      const exerciseMatch = trimmedLine.match(/^(\d+[\.\)]\s*|[-*•]\s*|[\w\s]+:\s*)/i)
+      
+      if (exerciseMatch && currentDay && trimmedLine.length > 3) {
+        const exerciseText = trimmedLine
+          .replace(/^\d+[\.\)]\s*/, '')
+          .replace(/^[-*•]\s*/, '')
+          .trim()
+        
+        const exerciseParts = exerciseText.split(/[:;]/)
+        const exerciseName = exerciseParts[0]?.trim()
+        const exerciseDetails = exerciseParts[1]?.trim() || ''
+        
+        if (exerciseName && exerciseName.length > 2) {
+          // Extrair informações de séries e repetições do nome/detalhes
+          let series = 3
+          let repeticoes = '10-12'
+          let descanso = 60
           
-          const exerciseName = exerciseParts[0]?.trim()
-          const exerciseDetails = exerciseParts[1]?.trim() || ''
-          
-          if (exerciseName) {
-            currentDay.exercicios.push({
-              nome: exerciseName,
-              series: 3,
-              repeticoes: '10-12',
-              descanso: 60,
-              observacoes: exerciseDetails
-            })
+          // Procurar por padrões como "3x12", "4 séries", etc.
+          const seriesMatch = exerciseText.match(/(\d+)\s*[x×]\s*(\d+)/i)
+          if (seriesMatch) {
+            series = parseInt(seriesMatch[1])
+            repeticoes = seriesMatch[2]
           }
+          
+          currentDay.exercicios.push({
+            nome: exerciseName,
+            series,
+            repeticoes,
+            descanso,
+            observacoes: exerciseDetails
+          })
+          
+          console.log(`Exercício adicionado: ${exerciseName}`)
         }
       }
     }
@@ -243,7 +268,7 @@ function parseMarkdownTemplate(content: string, fileName: string) {
       structure
     }
 
-    console.log(`Template processado: ${template.template_name}, dias: ${structure.semanas[0].dias.length}`)
+    console.log(`Template processado: ${template.template_name}, dias: ${structure.semanas[0].dias.length}, exercícios total: ${structure.semanas[0].dias.reduce((acc, dia) => acc + dia.exercicios.length, 0)}`)
     return template
 
   } catch (error) {
